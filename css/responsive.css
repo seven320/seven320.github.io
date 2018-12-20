@@ -1,0 +1,17 @@
+/* for tablet */
+@media all and (max-width: 1000px) {
+
+}
+
+
+
+/* for smart phone */
+@media all and (max-width: 670px) {
+  .menu-icon{
+    display: block;
+  }
+
+  .btn{
+    display: none;
+  }
+}
