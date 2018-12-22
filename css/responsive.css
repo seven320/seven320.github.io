@@ -1,5 +1,8 @@
 /* for tablet */
 @media all and (max-width: 1000px) {
+  .product{
+    width:50%;
+  }
 
 }
 
@@ -13,5 +16,9 @@
 
   .btn{
     display: none;
+  }
+
+  .product{
+    width:100%;
   }
 }
