@@ -9,14 +9,12 @@ body {
   margin:0 auto;
 }
 
-
 /* header */
 header{
   height: 65px;
   width:100%;
   background-color: rgba(0, 0, 0, 0.5);
 }
-
 
 /*btn part*/
 .btn-wrapper{
@@ -78,17 +76,17 @@ header{
 
 /* ハンバーガーmenu部分 */
 nav.NavMenu{
+
   position: fixed;	/*表示位置を固定*/
   z-index: 2;		/*重ね順を変更*/
   top: 0;		/*表示位置を指定*/
-  left: 0;	/*表示位置を指定*/
+  left: 0;	/*表示位置を指定 */
   background: #fff;/*背景を白にする*/
   color: #000;	/*文字色をwhiteにする*/
   text-align: center;		/*テキストを中央揃え*/
   width: 100%;	/*全幅表示*/
   transform: translateY(-100%);	/*ナビを上に隠す*/
   transition: all 0.6s;	/*アニメーションの時間を指定*/
-
 }
 
 nav.NavMenu ul{
@@ -109,7 +107,6 @@ nav.NavMenu ul li{
 nav.NavMenu ul li:last-child{
   padding-bottom: 20px;
   border-bottom: none;	/*最後のメニュー項目のみ下線を消す*/
-
 }
 
 nav.NavMenu ul li a{
@@ -124,7 +121,7 @@ nav.NavMenu.active{
 
 .Toggle {
     display: block;
-    position: fixed;    /* bodyに対しての絶対位置指定 */
+    position:absolute;    
     right: 20px;
     top: 12px;
     width: 32px;
