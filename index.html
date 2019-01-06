@@ -12,6 +12,8 @@
     <link rel="stylesheet" href="css/responsive.css">
     <!-- icon link part -->
     <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
+    <!-- jquery -->
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
   </head>
 
 
@@ -45,9 +47,57 @@
             amazon
           </a>
         </div>
-        <div class="menu-icon">
-          <span class="fas fa-bars"></span>
+        <!-- ケータイ用　ハンバーガー -->
+        <nav class="NavMenu">
+        　<ul>
+        　　<li>
+              <a href="https://github.com/seven320" class="github">
+                <span class="fab fa-github"></span>
+                github
+              </a>
+            </li>
+        　　<li>
+            <a href="https://twitter.com/yosyuaomenww" class="twitter">
+              <span class="fab fa-twitter"><span>
+                twitter
+              </a>
+            </li>
+        　　<li>
+            <a href="https://www.instagram.com/ken_4y4/?hl=ja" class="instagram">
+              <span class="fab fa-instagram"></span>
+              insta
+            </a>
+          </li>
+        　　<li>
+              <a href="http://denden12.sakura.ne.jp/blog/" class="blog">
+                <span class="fas fa-pen-nib"></span>
+                blog
+              </a>
+            </li>
+          </ul>
+        </nav>
+        <div class="Toggle">
+        　　<span></span>
+        　　<span></span>
+        　　<span></span>
         </div>
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+
+        <script type="text/javascript">
+        $(function() {
+          $('.Toggle').click(function() {
+              $(this).toggleClass('active');
+
+              if ($(this).hasClass('active')) {
+                  $('.NavMenu').addClass('active');　		//クラスを付与
+              } else {
+                  $('.NavMenu').removeClass('active');	//クラスを外す
+              }
+          });
+        });
+        </script>
       </div>
     </header>
 
@@ -97,12 +147,16 @@
             <img src="images/profile-icon.png" />
             <h3>Profile Page</h3>
             <p class="txt-content">
-              このホームページ．以前はfreehtml5.coのものを使わせていただいていたが，文字がずれるバグが発生したのでめんどくさくなって１から勉強して自作した．余計めんどくかった．html,css.<br />
+              このホームページ．以前はfreehtml5.coのものを使わせていただいていたが，文字がずれるバグが発生したのでめんどくさくなって１から勉強して自作した．余計めんどくさかった．html,css.<br />
               <a href="https://github.com/seven320/seven320.github.io">source code</a>
             </p>
           </div>
         </div>
       </div>
+
+      <!-- <div class="container">
+        <h2></h2>
+      </div> -->
     </div>
 
     <footer>

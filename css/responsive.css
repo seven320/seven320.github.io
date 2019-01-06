@@ -1,16 +1,17 @@
 /* for tablet */
 @media all and (max-width: 1000px) {
+  .Toggle{
+    display: none;
+  }
   .product{
     width:50%;
   }
 
 }
 
-
-
 /* for smart phone */
 @media all and (max-width: 670px) {
-  .menu-icon{
+  .Toggle{
     display: block;
   }
 

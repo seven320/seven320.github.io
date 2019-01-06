@@ -76,13 +76,114 @@ header{
   display: none;
 }
 
+/* ハンバーガーmenu部分 */
+nav.NavMenu{
+  position: fixed;	/*表示位置を固定*/
+  z-index: 2;		/*重ね順を変更*/
+  top: 0;		/*表示位置を指定*/
+  left: 0;	/*表示位置を指定*/
+  background: #fff;/*背景を白にする*/
+  color: #000;	/*文字色をwhiteにする*/
+  text-align: center;		/*テキストを中央揃え*/
+  width: 100%;	/*全幅表示*/
+  transform: translateY(-100%);	/*ナビを上に隠す*/
+  transition: all 0.6s;	/*アニメーションの時間を指定*/
+
+}
+
+nav.NavMenu ul{
+  background: gray;	/*背景をグレーにする*/
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+nav.NavMenu ul li{
+  font-size: 1.1em;
+  list-style-type: none;
+  padding: 0;
+  width: 100%;
+  border-bottom: 1px dotted #333;
+}
+
+nav.NavMenu ul li:last-child{
+  padding-bottom: 20px;
+  border-bottom: none;	/*最後のメニュー項目のみ下線を消す*/
+
+}
+
+nav.NavMenu ul li a{
+  display: block;		/*クリックできる領域を広げる*/
+  color: white;
+  padding: 10px 0;
+}
+
+nav.NavMenu.active{
+  transform: translateY(0%);		/*ナビを表示する*/
+}
+
+.Toggle {
+    display: block;
+    position: fixed;    /* bodyに対しての絶対位置指定 */
+    right: 20px;
+    top: 12px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    z-index: 3;
+}
+
+.Toggle span {
+    display: block;
+    position: absolute;
+    width: 30px;
+    border-bottom: solid 3px #000;
+    -webkit-transition: .35s ease-in-out;	/*変化の速度を指定*/
+    -moz-transition: .35s ease-in-out;		/*変化の速度を指定*/
+    transition: .35s ease-in-out;			/*変化の速度を指定*/
+    left: 6px;
+}
+
+.Toggle span:nth-child(1) {
+    top: 9px;
+}
+
+.Toggle span:nth-child(2) {
+    top: 18px;
+}
+
+.Toggle span:nth-child(3) {
+    top: 27px;
+}
+
+/* 最初のspanをマイナス45度に */
+.Toggle.active span:nth-child(1) {
+    top: 18px;
+    left: 6px;
+    -webkit-transform: rotate(-45deg);
+    -moz-transform: rotate(-45deg);
+    transform: rotate(-45deg);
+}
+
+/* 2番目と3番目のspanを45度に */
+.Toggle.active span:nth-child(2),
+.Toggle.active span:nth-child(3) {
+    top: 18px;
+    -webkit-transform: rotate(45deg);
+    -moz-transform: rotate(45deg);
+    transform: rotate(45deg);
+}
+
+#fade{
+  display: none;
+}
 
 /* top part */
 .top-wrapper{
   width:100%;
   height:440px;
   /* background-size: cover; */
-  background-color:rgba(0,0,0,0.95);
+  background-color:rgba(0,0,0,0.9);
   text-align: center;
   padding-top: 75px;
 }
