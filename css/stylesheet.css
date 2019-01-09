@@ -122,6 +122,7 @@ nav.NavMenu.active{
 .Toggle {
     display: block;
     position:absolute;    
+    /* position: fixed; */
     right: 20px;
     top: 12px;
     width: 32px;
