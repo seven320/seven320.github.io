@@ -1,5 +1,6 @@
 /* for tablet */
-@media all and (max-width: 1000px) {
+@media all and (min-width: 1000px) {
+  /* 1000以上から適用 */
   .Toggle{
     display: none;
   }
@@ -10,7 +11,7 @@
 }
 
 /* for smart phone */
-@media all and (max-width: 670px) {
+@media all and (max-width: 999px) {
   .Toggle{
     display: block;
   }
