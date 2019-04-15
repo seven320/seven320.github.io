@@ -8,6 +8,9 @@
   .product{
     width:50%;
   }
+  .products{
+    display: flex;
+  }
 }
 
 /* for smart phone */

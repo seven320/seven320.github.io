@@ -241,6 +241,7 @@ nav.NavMenu.active{
 .product{
   float:left;
   width:25%;
+  height: auto;
 }
 
 .product p{
