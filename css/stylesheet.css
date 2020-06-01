@@ -227,7 +227,6 @@ nav.NavMenu.active{
   opacity: 0.6;
 }
 
-
 /* product part */
 .article-wrapper{
   /* floatで高さが認識されないのを防ぐため */
@@ -260,6 +259,11 @@ nav.NavMenu.active{
   border:1px rgba(0,0,0,0.3) solid;
 }
 
+.explain-google-analytics{
+  text-align: center;
+  font-size: 7px;
+}
+
 .txt-content{
   width:90%;
 }
@@ -271,5 +275,5 @@ nav.NavMenu.active{
 
 .footer-wrapper p{
   color:white;
-  font-size: 10px;
+  font-size: 15px;
 }
