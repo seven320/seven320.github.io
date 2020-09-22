@@ -70,13 +70,12 @@ header{
 
 .amazon{
   /* color:black; */
-  border-color:black;
-  display: none;
+  background-color: orange;
+  /* display: none; */
 }
 
 /* ハンバーガーmenu部分 */
 nav.NavMenu{
-
   position: fixed;	/*表示位置を固定*/
   z-index: 2;		/*重ね順を変更*/
   top: 0;		/*表示位置を指定*/
@@ -101,18 +100,18 @@ nav.NavMenu ul li{
   list-style-type: none;
   padding: 0;
   width: 100%;
-  border-bottom: 1px dotted #333;
+  border-bottom: 0px dotted #333;
 }
 
 nav.NavMenu ul li:last-child{
-  padding-bottom: 20px;
+  padding-bottom: 2px;
   border-bottom: none;	/*最後のメニュー項目のみ下線を消す*/
 }
 
 nav.NavMenu ul li a{
   display: block;		/*クリックできる領域を広げる*/
   color: white;
-  padding: 10px 0;
+  padding: 8px 0;
 }
 
 nav.NavMenu.active{
