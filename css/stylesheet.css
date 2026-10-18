@@ -176,6 +176,14 @@ a:hover {
   font-weight: 500;
 }
 
+.motto-label {
+  display: block;
+  color: var(--text-sub);
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 0.75em;
+  font-weight: 400;
+}
+
 .badges {
   display: flex;
   flex-wrap: wrap;
@@ -394,16 +402,10 @@ a:hover {
   font-weight: 600;
 }
 
-.travel-note {
-  margin: 20px 0 0;
-  color: var(--text-sub);
-  font-size: 0.85em;
-}
-
 .travel-map {
   display: block;
   width: 100%;
-  max-width: 620px;
+  max-width: 440px;
   height: auto;
   justify-self: center;
 }
