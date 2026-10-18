@@ -227,6 +227,21 @@ a:hover {
   font-weight: 600;
 }
 
+a.badge,
+a.tier {
+  transition: border-color 0.2s;
+}
+
+a.badge:hover,
+a.tier:hover {
+  border-color: currentColor;
+  text-decoration: none;
+}
+
+a.badge:not(.badge-master) {
+  color: var(--text);
+}
+
 .badge-master {
   border-color: rgba(255, 92, 25, 0.55);
   background: rgba(255, 92, 25, 0.12);
@@ -579,6 +594,32 @@ a:hover {
   margin: 0 0 6px;
   font-size: 0.95em;
   line-height: 1.5;
+}
+
+/* タイトルのリンクをカード全体に広げる */
+.card-link {
+  color: inherit;
+}
+
+.card-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: var(--radius);
+}
+
+.card-link:hover {
+  text-decoration: none;
+}
+
+/* カードの中の別のリンクは上に出して押せるようにする */
+.medal-card .meta a {
+  position: relative;
+  z-index: 1;
+}
+
+.medal-card:has(.card-link) {
+  cursor: pointer;
 }
 
 .medal-card .meta {
