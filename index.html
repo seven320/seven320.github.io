@@ -292,6 +292,7 @@
 
     var CELL = 6;          // 水面1マスの大きさ(px)
     var DAMPING = 0.986;   // 波の減衰
+    var MAX_HEIGHT = 500;  // 水面の高さの上限(連打で波が大きくなりすぎないように)
     var LIGHT = [-0.6, -0.8]; // 光の向き(左上から)
     var cols, rows, cur, prev, image;
     var lastSecond = -1;
@@ -341,7 +342,8 @@
           var py = cy + y;
           if (px < 1 || py < 1 || px >= cols - 1 || py >= rows - 1) continue;
           var s = sech(Math.sqrt(x * x + y * y) / width);
-          cur[py * cols + px] += power * s * s;
+          var i = py * cols + px;
+          cur[i] = Math.max(-MAX_HEIGHT, Math.min(MAX_HEIGHT, cur[i] + power * s * s));
         }
       }
     }
@@ -366,7 +368,8 @@
         for (var x = 1; x < cols - 1; x++) {
           var i = y * cols + x;
           var next = (cur[i - 1] + cur[i + 1] + cur[i - cols] + cur[i + cols]) / 2 - prev[i];
-          prev[i] = next * DAMPING;
+          next *= DAMPING;
+          prev[i] = next > MAX_HEIGHT ? MAX_HEIGHT : next < -MAX_HEIGHT ? -MAX_HEIGHT : next;
         }
       }
       var tmp = cur;
