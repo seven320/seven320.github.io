@@ -168,6 +168,14 @@ a:hover {
   color: var(--text-sub);
 }
 
+.motto {
+  margin: 0 0 20px;
+  padding-left: 12px;
+  border-left: 2px solid var(--accent);
+  font-family: "JetBrains Mono", "Noto Sans JP", monospace;
+  font-weight: 500;
+}
+
 .badges {
   display: flex;
   flex-wrap: wrap;
@@ -286,7 +294,18 @@ a:hover {
 /* about part */
 .lead {
   max-width: 820px;
+  margin: 0 0 16px;
+}
+
+.contact {
   margin: 0 0 32px;
+  color: var(--text-sub);
+  font-size: 0.9em;
+}
+
+.contact span {
+  margin-right: 8px;
+  color: var(--accent);
 }
 
 .about-grid {
@@ -349,6 +368,44 @@ a:hover {
 .plain li span {
   color: var(--text-sub);
   font-size: 0.9em;
+}
+
+.travel {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 32px;
+  align-items: center;
+  margin-top: 16px;
+}
+
+.travel-count {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-size: 2.2em;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.travel-count small {
+  display: block;
+  margin-top: 6px;
+  color: var(--text-sub);
+  font-size: 0.36em;
+  font-weight: 600;
+}
+
+.travel-note {
+  margin: 20px 0 0;
+  color: var(--text-sub);
+  font-size: 0.85em;
+}
+
+.travel-map {
+  display: block;
+  width: 100%;
+  max-width: 620px;
+  height: auto;
+  justify-self: center;
 }
 
 /* career part */
@@ -663,7 +720,8 @@ a:hover {
 
   .about-grid,
   .medal-grid,
-  .product-grid {
+  .product-grid,
+  .travel {
     grid-template-columns: 1fr;
   }
 }

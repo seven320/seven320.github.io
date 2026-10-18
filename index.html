@@ -15,14 +15,6 @@
   <link rel="stylesheet" href="css/stylesheet.css">
   <!-- icon link part -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
-  <!-- Global site tag (gtag.js) - Google Analytics -->
-  <script async src="https://www.googletagmanager.com/gtag/js?id=UA-155017044-3"></script>
-  <script>
-  window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'UA-155017044-3');
-  </script>
 </head>
 
 <body>
@@ -43,11 +35,12 @@
     <!-- 波紋エフェクト用 -->
     <canvas class="hero-fx" aria-hidden="true"></canvas>
     <div class="container hero-inner">
-      <img class="icon" src="images/icon.png" alt="denden icon">
+      <img class="icon" src="images/icon-circle.jpg" width="239" height="249" alt="ヨルダン・ペトラ遺跡の野良猫" title="ヨルダン・ペトラ遺跡の野良猫">
       <div class="hero-text">
         <p class="hero-kicker">Data Engineer @ Recruit</p>
         <h1>電電</h1>
         <p class="hero-lead">データマネジメントとデータ基盤づくりが仕事。<br>休日は Kaggle でテーブル・音声・最適化・エージェントなんでもやります。</p>
+        <p class="motto">推測するな、計測せよ</p>
         <div class="badges">
           <span class="badge badge-master"><span class="fab fa-kaggle"></span>Kaggle Competitions Master</span>
           <span class="badge"><span class="fas fa-trophy"></span>SIGNATE Expert</span>
@@ -69,7 +62,8 @@
     <section class="section" id="about">
       <div class="container">
         <h2 class="section-title"><span>01</span>About</h2>
-        <p class="lead">大学時代に1年間休学し、英語留学を経て世界一周を経験。タイ、ネパール、インド、イスラエル、エジプト、ボリビアなど30か国を旅しました。帰国後にプログラミングに興味を持ち、京都大学大学院情報学研究科に進学。現在は株式会社リクルートに在籍し、データマネジメントを主体に担当しています。これまでに学習モデルの高速化なども経験しました。</p>
+        <p class="lead">大学時代に1年間休学し、英語留学を経て世界一周を経験。帰国後に大学院に進学し、競技プログラミングやコンペに参加。現在は株式会社リクルートに在籍し、データマネジメントを主体に担当しています。最近の関心は、AIエージェントとデータ品質・データガバナンスです。</p>
+        <p class="contact"><span class="far fa-envelope"></span>登壇やスポットのお仕事のご依頼は <a href="https://twitter.com/yosyuaomenww">X (Twitter)</a> の DM からどうぞ。子育て中のため、継続的なお仕事は現在お受けしていません。</p>
         <div class="about-grid">
           <div class="card">
             <h3>技術</h3>
@@ -103,6 +97,14 @@
               <li>応用情報技術者試験</li>
             </ul>
           </div>
+        </div>
+        <div class="travel card">
+          <div class="travel-info">
+            <h3>Travel</h3>
+            <p class="travel-count">32<small>countries + Antarctica</small></p>
+            <p class="travel-note">アイコンの猫は、ヨルダンのペトラ遺跡で出会った野良猫です。</p>
+          </div>
+          <img class="travel-map" src="images/world-map.svg" width="960" height="473" loading="lazy" alt="行った国を塗った世界地図">
         </div>
       </div>
     </section>
@@ -219,7 +221,7 @@
         <div class="product-grid">
           <article class="product">
             <a href="https://twitter.com/denden_by" class="thumb">
-              <img src="images/hometamon.jpg" alt="褒めたもん">
+              <img src="images/hometamon.jpg" width="400" height="400" loading="lazy" alt="褒めたもん">
             </a>
             <div class="product-body">
               <h3>褒めたもん</h3>
@@ -236,7 +238,7 @@
           </article>
           <article class="product">
             <div class="thumb">
-              <img src="images/Autotarget.jpg" alt="自動起き上がりターゲット">
+              <img src="images/Autotarget.jpg" width="800" height="800" loading="lazy" alt="自動起き上がりターゲット">
             </div>
             <div class="product-body">
               <h3>自動起き上がりターゲット</h3>
@@ -254,7 +256,7 @@
           </article>
           <article class="product">
             <a href="https://arcard.denden.app" class="thumb">
-              <img src="images/ARCard.jpg" alt="誰でもARCard">
+              <img src="images/ARCard.jpg" width="750" height="750" loading="lazy" alt="誰でもARCard">
             </a>
             <div class="product-body">
               <h3>誰でもARCard</h3>
@@ -277,7 +279,6 @@
   </main>
 
   <footer class="site-footer">
-    <p class="explain-google-analytics">利用状況の計測のためにGoogle Analyticsを利用しています。</p>
     <p>© denden</p>
   </footer>
   <script>
