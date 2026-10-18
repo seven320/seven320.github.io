@@ -287,8 +287,8 @@
     var hero = document.querySelector('.hero');
     var canvas = document.querySelector('.hero-fx');
     if (!hero || !canvas || !canvas.getContext) return;
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     var ctx = canvas.getContext('2d');
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     var CELL = 6;          // 水面1マスの大きさ(px)
     var DAMPING = 0.986;   // 波の減衰
@@ -296,6 +296,9 @@
     var cols, rows, cur, prev, image;
     var lastSecond = -1;
     var lastFrame = 0;
+    var visible = true;
+    var running = false;
+    var resizeTimer = null;
 
     // 時刻の文字列をSHA-256でハッシュ化して32バイトを返す
     function sha256(str) {
@@ -311,8 +314,12 @@
     }
 
     function resize() {
-      cols = Math.ceil(hero.clientWidth / CELL) + 2;
-      rows = Math.ceil(hero.clientHeight / CELL) + 2;
+      var nextCols = Math.ceil(hero.clientWidth / CELL);
+      var nextRows = Math.ceil(hero.clientHeight / CELL);
+      // スマホのアドレスバーの出し入れなどで大きさが変わらないときは水面を作り直さない
+      if (nextCols === cols && nextRows === rows) return;
+      cols = nextCols;
+      rows = nextRows;
       cur = new Float32Array(cols * rows);
       prev = new Float32Array(cols * rows);
       canvas.width = cols;
@@ -393,9 +400,11 @@
     }
 
     function loop(now) {
+      if (!shouldRun()) {
+        running = false;
+        return;
+      }
       requestAnimationFrame(loop);
-      var rect = hero.getBoundingClientRect();
-      if (document.hidden || rect.bottom < 0 || rect.top > window.innerHeight) return;
       if (now - lastFrame < 1000 / 40) return;
       lastFrame = now;
       rainFromClock();
@@ -403,18 +412,44 @@
       render();
     }
 
+    function shouldRun() {
+      return visible && !document.hidden && !reduceMotion.matches;
+    }
+
+    // 見えている間だけ動かす
+    function update() {
+      if (shouldRun() && !running) {
+        running = true;
+        requestAnimationFrame(loop);
+      }
+      if (reduceMotion.matches) ctx.clearRect(0, 0, canvas.width, canvas.height);
+    }
+
+    // 画面上の位置を水面のマスに変換する(canvasは引き伸ばして表示している)
     function poke(clientX, clientY) {
-      var rect = hero.getBoundingClientRect();
-      drop(Math.floor((clientX - rect.left) / CELL), Math.floor((clientY - rect.top) / CELL), 2.5, 360);
+      var rect = canvas.getBoundingClientRect();
+      var x = Math.floor((clientX - rect.left) / rect.width * cols);
+      var y = Math.floor((clientY - rect.top) / rect.height * rows);
+      drop(x, y, 2.5, 360);
     }
 
     resize();
-    window.addEventListener('resize', resize);
-    hero.addEventListener('click', function(e) { poke(e.clientX, e.clientY); });
-    hero.addEventListener('touchstart', function(e) {
-      poke(e.touches[0].clientX, e.touches[0].clientY);
-    }, { passive: true });
-    requestAnimationFrame(loop);
+    window.addEventListener('resize', function() {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(resize, 150);
+    });
+    hero.addEventListener('pointerdown', function(e) {
+      // リンクやボタンを押したときは水滴を落とさない
+      if (reduceMotion.matches || e.target.closest('a')) return;
+      poke(e.clientX, e.clientY);
+    });
+    new IntersectionObserver(function(entries) {
+      visible = entries[0].isIntersecting;
+      update();
+    }).observe(hero);
+    document.addEventListener('visibilitychange', update);
+    reduceMotion.addEventListener('change', update);
+    update();
   })();
   </script>
 </body>
