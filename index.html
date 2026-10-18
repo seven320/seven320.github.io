@@ -291,7 +291,7 @@
     var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     var CELL = 6;          // 水面1マスの大きさ(px)
-    var DAMPING = 0.986;   // 波の減衰
+    var DAMPING = 0.965;   // 波の減衰(小さいほど早く消えて広がる距離が短くなる)
     var MAX_HEIGHT = 500;  // 水面の高さの上限(連打で波が大きくなりすぎないように)
     var LIGHT = [-0.6, -0.8]; // 光の向き(左上から)
     var cols, rows, cur, prev, image;
@@ -408,8 +408,10 @@
         return;
       }
       requestAnimationFrame(loop);
-      if (now - lastFrame < 1000 / 40) return;
-      lastFrame = now;
+      var interval = 1000 / 40;
+      if (now - lastFrame < interval - 4) return;
+      // 端数を持ち越して、60Hzでも120Hzでも1秒に約40回計算する
+      lastFrame = now - ((now - lastFrame) % interval);
       rainFromClock();
       step();
       render();
@@ -437,17 +439,22 @@
     }
 
     resize();
-    window.addEventListener('resize', function() {
+    function scheduleResize() {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(resize, 150);
-    });
+    }
+    if (window.ResizeObserver) {
+      new ResizeObserver(scheduleResize).observe(hero);
+    } else {
+      window.addEventListener('resize', scheduleResize);
+    }
     hero.addEventListener('pointerdown', function(e) {
       // リンクやボタンを押したときは水滴を落とさない
       if (reduceMotion.matches || e.target.closest('a')) return;
       poke(e.clientX, e.clientY);
     });
     new IntersectionObserver(function(entries) {
-      visible = entries[0].isIntersecting;
+      visible = entries[entries.length - 1].isIntersecting;
       update();
     }).observe(hero);
     document.addEventListener('visibilitychange', update);

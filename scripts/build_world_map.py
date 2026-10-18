@@ -6,6 +6,7 @@
 
 行った国を増やすときは VISITED に world-atlas の国名(英語)を足して再実行する。
 """
+import html
 import json
 import math
 import sys
@@ -116,7 +117,7 @@ def polygons(geometry):
 
 
 def main(topo_path):
-    topo = json.loads(Path(topo_path).read_text())
+    topo = json.loads(Path(topo_path).read_text(encoding="utf-8"))
     arcs = decode_arcs(topo)
     geometries = topo["objects"]["countries"]["geometries"]
 
@@ -126,7 +127,6 @@ def main(topo_path):
         sys.exit(f"world-atlas に無い国名: {missing}")
 
     x_max, _ = natural_earth(180, 0)
-    _, y_max = natural_earth(0, 90)
     scale = WIDTH / (2 * x_max)
     y_top = 84  # 北極付近は使わない
     y_bottom = -78  # 南極は上の方だけ見せる
@@ -151,12 +151,12 @@ def main(topo_path):
             else:
                 other_d.append(d)
         if visited_d:
-            paths.append(f'  <path class="visited" d="{"".join(visited_d)}"><title>{name}</title></path>')
+            paths.append(f'  <path class="visited" d="{"".join(visited_d)}"><title>{html.escape(name)}</title></path>')
         if other_d:
-            paths.append(f'  <path d="{"".join(other_d)}"><title>{name}</title></path>')
+            paths.append(f'  <path d="{"".join(other_d)}"><title>{html.escape(name)}</title></path>')
     for name, (lon, lat) in VISITED_POINTS.items():
         x, y = project(lon, lat)
-        paths.append(f'  <circle class="visited" cx="{x:.1f}" cy="{y:.1f}" r="3"><title>{name}</title></circle>')
+        paths.append(f'  <circle class="visited" cx="{x:.1f}" cy="{y:.1f}" r="3"><title>{html.escape(name)}</title></circle>')
 
     svg = "\n".join([
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {height:.0f}" role="img" aria-label="行った国の世界地図">',
@@ -168,7 +168,7 @@ def main(topo_path):
         "</svg>",
         "",
     ])
-    OUT.write_text(svg)
+    OUT.write_text(svg, encoding="utf-8")
     print(f"wrote {OUT} ({len(VISITED) + len(VISITED_POINTS)} places, {len(svg) // 1024}KB)")
 
 

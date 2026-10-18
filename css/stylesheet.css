@@ -695,6 +695,13 @@ a:hover {
     display: none;
   }
 
+  .nav {
+    /* 続きがあることが分かるように右端をぼかす */
+    padding-right: 24px;
+    mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+    -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
+  }
+
   .hero {
     padding: 60px 0;
   }
