@@ -1,19 +1,20 @@
 <!DOCTYPE html>
-<html>
+<html lang="ja">
 
 <head>
   <meta charset="utf-8">
   <!-- viewport -->
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>電電のページ</title>
+  <meta name="description" content="データエンジニア 電電(denden) のプロフィールページ">
+  <!-- fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&family=Noto+Sans+JP:wght@400;500;700&display=swap">
   <!-- css link -->
   <link rel="stylesheet" href="css/stylesheet.css">
-  <!-- responsive design link -->
-  <link rel="stylesheet" href="css/responsive.css">
   <!-- icon link part -->
   <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.5.0/css/all.css" integrity="sha384-B4dIYHKNBt8Bc12p+WXckhzcICo0wtJAoU8YZTY5qE0Id1GSseTk6S+L3BlXeVIU" crossorigin="anonymous">
-  <!-- jquery -->
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
   <!-- Global site tag (gtag.js) - Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=UA-155017044-3"></script>
   <script>
@@ -25,204 +26,241 @@
 </head>
 
 <body>
-  <header>
-    <div class="header-wrapper">
-      <div class="btn-wrapper">
-        <a href="https://github.com/seven320" class="btn github">
-          <!-- fa:Font Awesome -->
-          <span class="fab fa-github">
-          </span>github</a>
-        <a href="https://twitter.com/yosyuaomenww" class="btn twitter">
-          <span class="fab fa-twitter">
-          </span>twitter</a>
-        <a href="https://www.instagram.com/ken_4y4/?hl=ja" class="btn instagram">
-          <span class="fab fa-instagram">
-          </span>insta</a>
-        <a href="https://denden-seven.hatenablog.com/" class="btn blog">
-          <span class="fas fa-pen-nib">
-          </span>blog</a>
-        <a href="#" class="btn mail">
-          <span class="far fa-envelope">
-          </span>mail</a>
-      </div>
-      <!-- ケータイ用　ハンバーガー -->
-      <nav class="NavMenu">
-        <ul>
-          <li>
-            <a href="https://github.com/seven320" class="github">
-              <span class="fab fa-github">
-              </span>github</a>
-          </li>
-          <li>
-            <a href="https://twitter.com/yosyuaomenww" class="twitter">
-              <span class="fab fa-twitter">
-                <span>twitter</span>
-              </span>
-            </a>
-          </li>
-          <li>
-            <a href="https://www.instagram.com/ken_4y4/?hl=ja" class="instagram">
-              <span class="fab fa-instagram">
-              </span>insta</a>
-          </li>
-          <li>
-            <a href="https://denden-seven.hatenablog.com/" class="blog">
-              <span class="fas fa-pen-nib">
-              </span>blog</a>
-          </li>
-        </ul>
+  <header class="site-header">
+    <div class="container header-inner">
+      <a href="#top" class="logo">denden<span>.</span></a>
+      <nav class="nav">
+        <a href="#about">About</a>
+        <a href="#career">Career</a>
+        <a href="#competitions">Competitions</a>
+        <a href="#products">Products</a>
       </nav>
-      <div class="Toggle">
-        <span>
-        </span>
-        <span>
-        </span>
-        <span>
-        </span>
-      </div>
-      <script type="text/javascript">
-  $(function() {
-          $('.Toggle').click(function() {
-              $(this).toggleClass('active');
-
-              if ($(this).hasClass('active')) {
-                  $('.NavMenu').addClass('active');		//クラスを付与
-              } else {
-                  $('.NavMenu').removeClass('active');	//クラスを外す
-              }
-          });
-        });
-      </script>
     </div>
   </header>
-  <div class="top-wrapper">
-    <div class="container">
-      <img class="icon" src="images/icon.png" alt="Site Icon">
-      <h1>電電のページ</h1>
-      <h2>Engineer</h2>
-    </div>
-  </div>
-  <div class="intro-wrapper">
-    <div class="container">
-      <h2>自己紹介</h2>
-      <p class="txt-content">大学時代に1年間休学し、英語留学を経て世界一周を経験。タイ、ネパール、インド、イスラエル、エジプト、ボリビアなど30か国を旅しました。帰国後にプログラミングに興味を持ち、京都大学大学院情報学研究科に進学。現在は株式会社リクルートに在籍し、データマネジメントを主体に担当しています。これまでに学習モデルの高速化なども経験しました。
-        <br>
-      </p>
-      <h3>言語</h3>
-      <ul>
-        <li>日本語（ネイティブ）</li>
-        <li>英語（TOEFL 71）</li>
-        <li>スペイン語（旅行程度）</li>
-      </ul>
-      <h3>技術</h3>
-      <ul>
-        <li>Python3 / SQL / BigQuery / dbt / Tableau / git</li>
-      </ul>
-      <h3>資格</h3>
-      <ul>
-        <li><a href="https://www.kaggle.com/denden12">kaggle master</a></li>
-        <li><a href="https://signate.jp/users/39602">signate expert</a></li>
-        <li>応用情報技術者試験</li>
-        
-      </ul>
-    </div>
-  </div>
-  <div class="background">
-    <div class="container">
-      <h2>経歴</h2>
-      <p></p>
-      <ul>
-        <li>2019年3月京都大学工学部電気電子工学科卒業</li>
-        <li>2021年3月京都大学大学院情報学研究科システム科学専攻修了</li>
-        <li>2021年4月データエンジニアとして株式会社リクルートに入社~SaaS事業に配属（現在も在籍、データマネジメントを主体に担当）
-          <ul>
-            <li>データマネジメントの一環として、dbtを用いた既存データ基盤のリプレイス</li>
-            <li>複数プロダクトについてBIツールを用いたモニタリングの設計から作成、配信、運用</li>
-            <li>社内向けのKPI指標などを集約したデータポータルの作成、改善、運用フローの作成</li>
-            <li>データパイプラインの技術調査、選定、リプレイス</li>
-            <li>事業KPIに関する指標定義の作成</li>
-            <li>チーム内の業務標準化のためのワークフロー整理、手順書作成並びにその装着</li>
-            <li>複数プロダクトに跨ったデータ基盤のマネジメント</li>
-          </ul>
-        </li>
-      </ul>
-      <h2>コンペ</h2>
-      <p></p>
-      <ul>
-        <li>kaggle Kaggriculture 3rd🥇</li>
-        <li>signate 海岸検出コンペ 12位🥈
-          <a href="https://denden-seven.hatenablog.com/entry/coastline">詳細blog</a>
-        </li>
-        <li>signate パナソニック株式会社間取り図コンペ 13位🥈
-        </li>
-        <li>signate ソニーグループ合同データ分析コンペティション 32位🥈
-          <a href="https://docs.google.com/presentation/d/1uQlXY5uBzi0eykS2nM_Kw-N1N0KYd7GkTHcVYKerdrM/edit#slide=id.p">スライド</a>
-        </li>
-        <li>kaggle Ventilator Pressure Prediction 126th🥈</li>
-        <li>kaggle Santa 2024 - The Perplexity Permutation Puzzle 18th🥈
-          <a href="https://www.kaggle.com/certification/competitions/denden12/santa-2024">詳細ディスカッション</a>
-        </li>
-        <li>kaggle NeurIPS 2025 - Google Code Golf Championship 15th🥈</li>
-        <li>kaggle BirdCLEF+ 2026 141st🥈</li>
-        <li>kaggle The Pokémon Company - PTCG AI Battle Challenge Simulation 93rd🥈</li>
-      </ul>
-      <details>
-        <summary>過去のインターン・RA</summary>
-        <ul>
-          <li>京都大学日立研究所にて強化学習に関してリサーチアシスタントとして勤務</li>
-          <li>VOYAGE GROUP夏インターン「Treasure」に参加
-            <a href="https://denden-seven.hatenablog.com/entry/2019/09/01/150659">詳細blog</a>
-          </li>
-          <li>Recruit夏インターンに参加
-            <a href="https://denden-seven.hatenablog.com/entry/2019/09/30/180550">詳細blog</a>
-          </li>
-        </ul>
-      </details>
-    </div>
-  </div>
-  <div class="article-wrapper">
-    <div class="container">
-      <h2>products</h2>
-      <div class="products">
-        <div class="product hometamon">
-          <a href="https://twitter.com/denden_by">
-            <img src="images/hometamon.jpg" alt="Hometamon Product Image">
-          </a>
-          <h3>褒めたもん</h3>
-          <p class="txt-content">Twitterのbotプログラムで、タイムラインを見てフォロワーを褒めたり、挨拶したりします。時々暴走することもあります。受け答えのデータを基に自然言語処理を行い、褒めるべきかどうかを判断する機能を作成しました。レンタルサーバー上で動作しています。
-            <br>使用言語：Python3
-            <br>
-            <a href="https://github.com/seven320/metamon_code">source code</a>
-            <a href="https://denden-seven.hatenablog.com/entry/2019/01/09/131220">詳細blog</a>
-          </p>
+
+  <!-- top part -->
+  <section class="hero" id="top">
+    <div class="container hero-inner">
+      <img class="icon" src="images/icon.png" alt="denden icon">
+      <div class="hero-text">
+        <p class="hero-kicker">Data Engineer @ Recruit</p>
+        <h1>電電</h1>
+        <p class="hero-lead">データマネジメントとデータ基盤づくりが仕事。<br>休日は Kaggle でテーブル・音声・最適化・エージェントなんでもやります。</p>
+        <div class="badges">
+          <span class="badge badge-master"><span class="fab fa-kaggle"></span>Kaggle Competitions Master</span>
         </div>
-        <div class="product AutoTarget">
-          <img src="images/Autotarget.jpg" alt="AutoTarget Product Image">
-          <h3>自動起き上がりターゲット</h3>
-          <p class="txt-content">エアガンでの射撃に使用する電子ターゲットで、的に当たると自動で起き上がる仕組みになっています。
-            <br>使用技術：ｃ++,arduino,電子工作
-            <br>
-            <a href="https://github.com/seven320/-Target_on_with_Arduino">source code</a>
-            <a href="https://denden-seven.hatenablog.com/entry/2019/09/02/153824">詳細blog</a>
-          </p>
-        </div>
-        <div class="product ARCard">
-          <img src="images/ARCard.jpg" alt="ARCard Product Image">
-          <h3>誰でもARCard</h3>
-          <p class="txt-content">だれでもARで名刺がすぐに作れるようなプラットフォーム。バックエンドはGo,フロントはVueで書いた。twitterのAPIも使用している
-            <br>使用技術：JS,AR.js,Golang,Docker,mysql
-            <br>
-            <a href="https://arcard.denden.app">誰でもARCard</a>
-          </p>
+        <div class="links">
+          <a href="https://github.com/seven320" class="link-btn"><span class="fab fa-github"></span>GitHub</a>
+          <a href="https://www.kaggle.com/denden12" class="link-btn"><span class="fab fa-kaggle"></span>Kaggle</a>
+          <a href="https://denden-seven.hatenablog.com/" class="link-btn"><span class="fas fa-pen-nib"></span>Blog</a>
+          <a href="https://twitter.com/yosyuaomenww" class="link-btn"><span class="fab fa-twitter"></span>Twitter</a>
+          <a href="https://www.instagram.com/ken_4y4/?hl=ja" class="link-btn"><span class="fab fa-instagram"></span>Instagram</a>
         </div>
       </div>
     </div>
-  </div>
-  <p class="explain-google-analytics">利用状況の計測のためにGoogle Analyticsを利用しています。</p>
-  <footer>
-    <div class="footer-wrapper">
-      <p>©2021 denden. All right reserved</p>
-    </div>
+  </section>
+
+  <main>
+    <!-- about part -->
+    <section class="section" id="about">
+      <div class="container">
+        <h2 class="section-title"><span>01</span>About</h2>
+        <p class="lead">大学時代に1年間休学し、英語留学を経て世界一周を経験。タイ、ネパール、インド、イスラエル、エジプト、ボリビアなど30か国を旅しました。帰国後にプログラミングに興味を持ち、京都大学大学院情報学研究科に進学。現在は株式会社リクルートに在籍し、データマネジメントを主体に担当しています。これまでに学習モデルの高速化なども経験しました。</p>
+        <div class="about-grid">
+          <div class="card">
+            <h3>技術</h3>
+            <ul class="chips">
+              <li>Python3</li>
+              <li>SQL</li>
+              <li>BigQuery</li>
+              <li>dbt</li>
+              <li>Tableau</li>
+              <li>git</li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>言語</h3>
+            <ul class="plain">
+              <li>日本語<span>ネイティブ</span></li>
+              <li>英語<span>TOEFL 71</span></li>
+              <li>スペイン語<span>旅行程度</span></li>
+            </ul>
+          </div>
+          <div class="card">
+            <h3>資格</h3>
+            <ul class="plain">
+              <li><a href="https://www.kaggle.com/denden12">Kaggle</a><span>Competitions Master</span></li>
+              <li><a href="https://signate.jp/users/39602">SIGNATE</a><span>Expert</span></li>
+              <li>応用情報技術者試験</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- career part -->
+    <section class="section" id="career">
+      <div class="container">
+        <h2 class="section-title"><span>02</span>Career</h2>
+        <ol class="timeline">
+          <li class="current">
+            <p class="when">2021.04 — 現在</p>
+            <h3>株式会社リクルート / データエンジニア</h3>
+            <p class="where">SaaS事業 · データマネジメントを主体に担当</p>
+            <ul>
+              <li>データマネジメントの一環として、dbtを用いた既存データ基盤のリプレイス</li>
+              <li>複数プロダクトについてBIツールを用いたモニタリングの設計から作成、配信、運用</li>
+              <li>社内向けのKPI指標などを集約したデータポータルの作成、改善、運用フローの作成</li>
+              <li>データパイプラインの技術調査、選定、リプレイス</li>
+              <li>事業KPIに関する指標定義の作成</li>
+              <li>チーム内の業務標準化のためのワークフロー整理、手順書作成並びにその装着</li>
+              <li>複数プロダクトに跨ったデータ基盤のマネジメント</li>
+            </ul>
+          </li>
+          <li>
+            <p class="when">2021.03</p>
+            <h3>京都大学大学院 情報学研究科 システム科学専攻 修了</h3>
+          </li>
+          <li>
+            <p class="when">2019.03</p>
+            <h3>京都大学 工学部 電気電子工学科 卒業</h3>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- competitions part -->
+    <section class="section" id="competitions">
+      <div class="container">
+        <h2 class="section-title"><span>03</span>Competitions</h2>
+        <div class="medal-grid">
+          <article class="medal-card gold">
+            <p class="medal">🥇 Gold</p>
+            <p class="rank">3<small>rd</small></p>
+            <h3>Kaggriculture</h3>
+            <p class="meta">Kaggle · Simulation · 10,148 teams</p>
+          </article>
+          <article class="medal-card">
+            <p class="medal">🥈 Silver</p>
+            <p class="rank">15<small>th</small></p>
+            <h3>NeurIPS 2025 - Google Code Golf Championship</h3>
+            <p class="meta">Kaggle · 1,142 teams</p>
+          </article>
+          <article class="medal-card">
+            <p class="medal">🥈 Silver</p>
+            <p class="rank">18<small>th</small></p>
+            <h3>Santa 2024 - The Perplexity Permutation Puzzle</h3>
+            <p class="meta">Kaggle · 1,514 teams · <a href="https://www.kaggle.com/certification/competitions/denden12/santa-2024">詳細</a></p>
+          </article>
+          <article class="medal-card">
+            <p class="medal">🥈 Silver</p>
+            <p class="rank">93<small>rd</small></p>
+            <h3>The Pokémon Company - PTCG AI Battle Challenge Simulation</h3>
+            <p class="meta">Kaggle · Simulation · 6,807 teams</p>
+          </article>
+          <article class="medal-card">
+            <p class="medal">🥈 Silver</p>
+            <p class="rank">126<small>th</small></p>
+            <h3>Google Brain - Ventilator Pressure Prediction</h3>
+            <p class="meta">Kaggle · 2,605 teams</p>
+          </article>
+          <article class="medal-card">
+            <p class="medal">🥈 Silver</p>
+            <p class="rank">141<small>st</small></p>
+            <h3>BirdCLEF+ 2026</h3>
+            <p class="meta">Kaggle · 4,094 teams</p>
+          </article>
+        </div>
+
+        <h3 class="sub-title">SIGNATE</h3>
+        <ul class="result-list">
+          <li><span class="pos">12位 🥈</span>海岸検出コンペ <a href="https://denden-seven.hatenablog.com/entry/coastline">詳細blog</a></li>
+          <li><span class="pos">13位 🥈</span>パナソニック株式会社 間取り図コンペ</li>
+          <li><span class="pos">32位 🥈</span>ソニーグループ合同データ分析コンペティション <a href="https://docs.google.com/presentation/d/1uQlXY5uBzi0eykS2nM_Kw-N1N0KYd7GkTHcVYKerdrM/edit#slide=id.p">スライド</a></li>
+        </ul>
+
+        <details class="history">
+          <summary>過去のインターン・RA</summary>
+          <ul>
+            <li>京都大学日立研究所にて強化学習に関してリサーチアシスタントとして勤務</li>
+            <li>VOYAGE GROUP夏インターン「Treasure」に参加
+              <a href="https://denden-seven.hatenablog.com/entry/2019/09/01/150659">詳細blog</a>
+            </li>
+            <li>Recruit夏インターンに参加
+              <a href="https://denden-seven.hatenablog.com/entry/2019/09/30/180550">詳細blog</a>
+            </li>
+          </ul>
+        </details>
+      </div>
+    </section>
+
+    <!-- product part -->
+    <section class="section" id="products">
+      <div class="container">
+        <h2 class="section-title"><span>04</span>Products</h2>
+        <div class="product-grid">
+          <article class="product">
+            <a href="https://twitter.com/denden_by" class="thumb">
+              <img src="images/hometamon.jpg" alt="褒めたもん">
+            </a>
+            <div class="product-body">
+              <h3>褒めたもん</h3>
+              <p>Twitterのbotプログラムで、タイムラインを見てフォロワーを褒めたり、挨拶したりします。時々暴走することもあります。受け答えのデータを基に自然言語処理を行い、褒めるべきかどうかを判断する機能を作成しました。レンタルサーバー上で動作しています。</p>
+              <ul class="chips small">
+                <li>Python3</li>
+                <li>NLP</li>
+              </ul>
+              <div class="product-links">
+                <a href="https://github.com/seven320/metamon_code"><span class="fab fa-github"></span>source</a>
+                <a href="https://denden-seven.hatenablog.com/entry/2019/01/09/131220"><span class="fas fa-pen-nib"></span>blog</a>
+              </div>
+            </div>
+          </article>
+          <article class="product">
+            <div class="thumb">
+              <img src="images/Autotarget.jpg" alt="自動起き上がりターゲット">
+            </div>
+            <div class="product-body">
+              <h3>自動起き上がりターゲット</h3>
+              <p>エアガンでの射撃に使用する電子ターゲットで、的に当たると自動で起き上がる仕組みになっています。</p>
+              <ul class="chips small">
+                <li>C++</li>
+                <li>Arduino</li>
+                <li>電子工作</li>
+              </ul>
+              <div class="product-links">
+                <a href="https://github.com/seven320/-Target_on_with_Arduino"><span class="fab fa-github"></span>source</a>
+                <a href="https://denden-seven.hatenablog.com/entry/2019/09/02/153824"><span class="fas fa-pen-nib"></span>blog</a>
+              </div>
+            </div>
+          </article>
+          <article class="product">
+            <a href="https://arcard.denden.app" class="thumb">
+              <img src="images/ARCard.jpg" alt="誰でもARCard">
+            </a>
+            <div class="product-body">
+              <h3>誰でもARCard</h3>
+              <p>だれでもARで名刺がすぐに作れるようなプラットフォーム。バックエンドはGo、フロントはVueで書いた。TwitterのAPIも使用している。</p>
+              <ul class="chips small">
+                <li>JS</li>
+                <li>AR.js</li>
+                <li>Golang</li>
+                <li>Docker</li>
+                <li>MySQL</li>
+              </ul>
+              <div class="product-links">
+                <a href="https://arcard.denden.app"><span class="fas fa-external-link-alt"></span>site</a>
+              </div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <p class="explain-google-analytics">利用状況の計測のためにGoogle Analyticsを利用しています。</p>
+    <p>© denden</p>
   </footer>
 </body>
 
