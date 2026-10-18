@@ -26,7 +26,8 @@ body {
   margin: 0;
   background-color: var(--bg);
   color: var(--text);
-  font-family: "Inter", "Noto Sans JP", sans-serif;
+  /* 日本語は OS のフォント(Webフォントは重いため) */
+  font-family: "Inter", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
   line-height: 1.8;
   -webkit-font-smoothing: antialiased;
 }
@@ -44,6 +45,29 @@ a:hover {
   max-width: 1080px;
   padding: 0 20px;
   margin: 0 auto;
+}
+
+/* アイコン */
+.icon-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.i {
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  fill: currentColor;
+  vertical-align: -0.125em;
+}
+
+/* 文中のリンクは色だけでなく下線でも分かるように */
+.contact a,
+.medal-card .meta a,
+.history a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 /* header */
@@ -172,14 +196,14 @@ a:hover {
   margin: 0 0 20px;
   padding-left: 12px;
   border-left: 2px solid var(--accent);
-  font-family: "JetBrains Mono", "Noto Sans JP", monospace;
+  font-family: "JetBrains Mono", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", monospace;
   font-weight: 500;
 }
 
 .motto-label {
   display: block;
   color: var(--text-sub);
-  font-family: "Noto Sans JP", sans-serif;
+  font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", sans-serif;
   font-size: 0.75em;
   font-weight: 400;
 }
@@ -311,7 +335,7 @@ a:hover {
   font-size: 0.9em;
 }
 
-.contact span {
+.contact .i {
   margin-right: 8px;
   color: var(--accent);
 }
@@ -647,7 +671,7 @@ a:hover {
   font-weight: 600;
 }
 
-.product-links span {
+.product-links .i {
   margin-right: 6px;
 }
 
