@@ -15,6 +15,19 @@
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <!-- css link -->
   <link rel="stylesheet" href="css/stylesheet.css">
+  <!-- Google Analytics (GA4)。表示を遅くしないようにページの読み込みが終わってから読み込む -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', 'G-CBPD48S3KB');
+    window.addEventListener('load', function() {
+      var script = document.createElement('script');
+      script.async = true;
+      script.src = 'https://www.googletagmanager.com/gtag/js?id=G-CBPD48S3KB';
+      document.head.appendChild(script);
+    });
+  </script>
 </head>
 
 <body>
@@ -289,6 +302,7 @@
   </main>
 
   <footer class="site-footer">
+    <p class="analytics-note">利用状況の計測のために Google Analytics を利用しています。</p>
     <p>© denden</p>
   </footer>
   <script>

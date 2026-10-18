@@ -684,6 +684,10 @@ a:hover {
   font-size: 0.85em;
 }
 
+.analytics-note {
+  font-size: 0.8em;
+}
+
 .site-footer p {
   margin: 4px 0;
 }
