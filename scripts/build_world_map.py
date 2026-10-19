@@ -16,10 +16,12 @@ VISITED = [
     # アジア
     "Japan",
     "China",
+    "Taiwan",
     "Mongolia",
     "Thailand",
     "Vietnam",
     "Laos",
+    "Cambodia",
     "Nepal",
     "India",
     "Sri Lanka",
