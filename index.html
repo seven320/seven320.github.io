@@ -478,7 +478,8 @@
     }
     hero.addEventListener('pointerdown', function(e) {
       // リンクやボタンを押したときは水滴を落とさない
-      if (reduceMotion.matches || e.target.closest('a')) return;
+      // 携帯ではスクロールのたびに揺れてしまうので、タッチでは落とさない
+      if (reduceMotion.matches || e.pointerType === 'touch' || e.target.closest('a')) return;
       poke(e.clientX, e.clientY);
     });
     new IntersectionObserver(function(entries) {
