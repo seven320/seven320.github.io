@@ -316,6 +316,7 @@
 
     var CELL = 6;          // 水面1マスの大きさ(px)
     var DAMPING = 0.965;   // 波の減衰(小さいほど早く消えて広がる距離が短くなる)
+    var VISIBLE_RADIUS = 0.5;  // 水滴を落とす範囲(マスクの楕円の半径に対する割合)
     var MAX_HEIGHT = 500;  // 水面の高さの上限(連打で波が大きくなりすぎないように)
     var LIGHT = [-0.6, -0.8]; // 光の向き(左上から)
     var cols, rows, cur, prev, image;
@@ -379,8 +380,11 @@
       lastSecond = second;
       sha256(new Date(second * 1000).toISOString()).then(function(bytes) {
         if (!bytes || unit(bytes, 0) >= 0.3) return;   // 30%の確率で落とす
-        var x = Math.floor(unit(bytes, 2) * cols);
-        var y = Math.floor(unit(bytes, 4) * rows);
+        // CSSのマスク(中央から30%まではっきり、75%で消える)で見える楕円の中にだけ落とす
+        var angle = unit(bytes, 2) * Math.PI * 2;
+        var radius = Math.sqrt(unit(bytes, 4)) * VISIBLE_RADIUS;  // 楕円の中で面積あたり均一に
+        var x = Math.floor(cols / 2 + Math.cos(angle) * radius * cols / Math.SQRT2);
+        var y = Math.floor(rows / 2 + Math.sin(angle) * radius * rows / Math.SQRT2);
         var width = 1.2 + unit(bytes, 6) * 1.6;
         var power = 160 + unit(bytes, 8) * 200;
         drop(x, y, width, power);
