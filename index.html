@@ -7,10 +7,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>電電のページ</title>
   <meta name="description" content="データエンジニア 電電(denden) のプロフィールページ">
-  <!-- fonts -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=JetBrains+Mono:wght@500&display=swap">
+  <link rel="preload" href="fonts/inter-latin.woff2" as="font" type="font/woff2" crossorigin>
   <link rel="icon" href="images/favicon.png" type="image/png">
   <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
   <!-- css link -->
@@ -22,10 +19,13 @@
     gtag('js', new Date());
     gtag('config', 'G-CBPD48S3KB');
     window.addEventListener('load', function() {
-      var script = document.createElement('script');
-      script.async = true;
-      script.src = 'https://www.googletagmanager.com/gtag/js?id=G-CBPD48S3KB';
-      document.head.appendChild(script);
+      // 表示が落ち着いてから読み込む
+      setTimeout(function() {
+        var script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-CBPD48S3KB';
+        document.head.appendChild(script);
+      }, 3000);
     });
   </script>
 </head>
