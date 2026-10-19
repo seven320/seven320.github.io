@@ -70,7 +70,11 @@
     <!-- 波紋エフェクト用 -->
     <canvas class="hero-fx" aria-hidden="true"></canvas>
     <div class="container hero-inner">
-      <img class="icon" src="images/icon-circle.jpg" width="239" height="249" alt="ヨルダン・ペトラ遺跡の野良猫" title="ヨルダン・ペトラ遺跡の野良猫">
+      <!-- イースターエッグ: アイコンを押すと回る。連打すると鳴く -->
+      <div class="icon-wrap">
+        <img class="icon" src="images/icon-circle.jpg" width="239" height="249" alt="ヨルダン・ペトラ遺跡の野良猫" title="ヨルダン・ペトラ遺跡の野良猫">
+        <span class="icon-bubble" aria-hidden="true"></span>
+      </div>
       <div class="hero-text">
         <p class="hero-kicker">Data Engineer @ Recruit</p>
         <h1>電電</h1>
@@ -507,6 +511,50 @@
     document.addEventListener('visibilitychange', update);
     reduceMotion.addEventListener('change', update);
     update();
+  })();
+
+  // アイコンを押すたびに1回転させる。連打すると回転が足されて速く回り、3回続けて押すと鳴く
+  (function() {
+    var icon = document.querySelector('.icon');
+    var bubble = document.querySelector('.icon-bubble');
+    if (!icon || !bubble) return;
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var COMBO = 3;          // 鳴くまでの連打回数
+    var COMBO_GAP = 600;    // これより間が空いたら連打を数え直す(ms)
+    // 鳴くときのセリフ。毎回この中からランダムに選ぶ
+    var LINES = [
+      'にゃー',
+      '目が回る…',
+      'やめるにゃ'
+    ];
+    var lastLine = -1;
+    var turns = 0;
+    var combo = 0;
+    var comboTimer = null;
+    var bubbleTimer = null;
+
+    icon.addEventListener('click', function() {
+      if (!reduceMotion.matches) {
+        turns++;
+        // コインのように縦の軸で回す
+        icon.style.transform = 'perspective(600px) rotateY(' + turns * 360 + 'deg)';
+      }
+      combo++;
+      clearTimeout(comboTimer);
+      comboTimer = setTimeout(function() { combo = 0; }, COMBO_GAP);
+      if (combo < COMBO) return;
+      combo = 0;
+      // 前回と同じセリフが続かないようにする
+      var next;
+      do {
+        next = Math.floor(Math.random() * LINES.length);
+      } while (next === lastLine);
+      lastLine = next;
+      bubble.textContent = LINES[next];
+      bubble.classList.add('show');
+      clearTimeout(bubbleTimer);
+      bubbleTimer = setTimeout(function() { bubble.classList.remove('show'); }, 1500);
+    });
   })();
   </script>
 </body>

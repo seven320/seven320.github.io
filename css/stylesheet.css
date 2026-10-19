@@ -182,14 +182,53 @@ a:hover {
   gap: 48px;
 }
 
+.icon-wrap {
+  position: relative;
+  flex-shrink: 0;
+}
+
 .icon {
+  display: block;
   width: 180px;
   height: 180px;
-  flex-shrink: 0;
   border-radius: 50%;
   object-fit: cover;
   border: 3px solid var(--bg);
   box-shadow: 0 0 0 3px var(--kaggle-master), 0 20px 60px rgba(255, 92, 25, 0.25);
+  cursor: pointer;
+  /* 押すたびに回る。連打したときに勢いよく回って、ゆっくり止まる */
+  transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.3, 1);
+}
+
+/* 連打したときの吹き出し */
+.icon-bubble {
+  position: absolute;
+  top: -4px;
+  right: -16px;
+  padding: 4px 12px;
+  border: 1px solid var(--kaggle-master);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 0.9em;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(6px) scale(0.9);
+  transition: opacity 0.2s, transform 0.2s;
+  pointer-events: none;
+}
+
+.icon-bubble.show {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon,
+  .icon-bubble {
+    transition: none;
+  }
 }
 
 .hero-kicker {
