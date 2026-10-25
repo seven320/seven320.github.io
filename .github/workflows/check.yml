@@ -1,0 +1,36 @@
+name: check
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  # 外部のリンク切れに気づけるように毎週も回す
+  schedule:
+    - cron: "0 0 * * 1"
+  workflow_dispatch:
+
+jobs:
+  html:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npx -y html-validate@9 index.html 404.html
+
+  links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          # X・Instagram はボットからのアクセスを弾くので確認しない。429(アクセスしすぎ)はリンク切れとみなさない
+          args: >-
+            --root-dir ${{ github.workspace }}
+            --exclude 'twitter\.com|x\.com|instagram\.com'
+            --accept '200..=299,429'
+            --exclude-loopback
+            --max-retries 3
+            index.html 404.html README.md
+          fail: true
