@@ -1,0 +1,3 @@
+__pycache__/
+# 旅行の写真を縮めるスクリプトは手元だけで使う
+scripts/add_travel_photo.py

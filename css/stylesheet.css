@@ -550,12 +550,277 @@ a.badge:not(.badge-master) {
   font-weight: 600;
 }
 
+.travel-map-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  justify-self: center;
+}
+
 .travel-map {
   display: block;
   width: 100%;
-  max-width: 440px;
   height: auto;
-  justify-self: center;
+}
+
+/* 選んでいる国(近くをなぞっている国)は明るくする */
+.travel-map .visited {
+  transition: fill 0.2s;
+}
+
+.travel-map .visited.active {
+  fill: #a5f5e7;
+}
+
+.travel-map .visited:focus-visible {
+  outline: none;
+  stroke: var(--text);
+  stroke-width: 1.5;
+}
+
+.travel-label {
+  position: absolute;
+  margin: 0;
+  padding: 2px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  color: var(--text);
+  font-size: 0.8em;
+  font-weight: 600;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translate(-50%, calc(-100% - 6px));
+  transition: opacity 0.15s;
+  pointer-events: none;
+}
+
+.travel-label.show {
+  opacity: 1;
+}
+
+/* 写真の束を開くボタン: 小さなポラロイドを2枚、傾けて重ねる */
+.photo-peek {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+  padding: 6px 4px;
+  border: 0;
+  background: none;
+  color: var(--text-sub);
+  font: inherit;
+  font-size: 0.85em;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.photo-peek[hidden] {
+  display: none;
+}
+
+.photo-peek-card {
+  position: relative;
+  display: block;
+  width: 34px;
+  height: 34px;
+  padding: 2px 2px 7px;
+  border-radius: 1px;
+  background: #fafeff;
+  box-shadow: 0 1.5px 2px -0.5px rgba(0, 0, 0, 0.5);
+  transform: rotate(4deg);
+  transform-origin: bottom center;
+  transition: transform 0.15s ease-out;
+}
+
+.photo-peek-card + .photo-peek-card {
+  margin-left: -44px;
+}
+
+.photo-peek-card:first-child {
+  transform: translate(3px, -2px) rotate(18deg);
+}
+
+.photo-peek:hover .photo-peek-card:first-child {
+  transform: translate(8px, -4px) rotate(26deg);
+}
+
+.photo-peek:hover .photo-peek-card {
+  transform: rotate(-2deg);
+}
+
+.photo-peek:hover {
+  color: var(--text);
+}
+
+.photo-peek-card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* 写真の束 */
+.photo-stack {
+  width: 100%;
+  max-width: none;
+  height: 100%;
+  max-height: none;
+  margin: 0;
+  padding: 16px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.photo-stack[open] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 44px;
+}
+
+.photo-stack::backdrop {
+  background: rgba(11, 15, 23, 0.8);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.photo-stack[open] .photo-stack-cards {
+  animation: stack-in 0.3s ease-out;
+}
+
+.photo-stack.closing .photo-stack-cards,
+.photo-stack.closing .photo-stack-hint,
+.photo-stack.closing .photo-stack-close {
+  opacity: 0;
+  scale: 0.85;
+  transition: opacity 0.25s ease-in, scale 0.25s ease-in;
+}
+
+@keyframes stack-in {
+  from {
+    opacity: 0;
+    scale: 0.8;
+  }
+}
+
+.photo-stack-cards {
+  position: relative;
+  width: min(300px, 80vw);
+  aspect-ratio: 264 / 240;
+  perspective: 600px;
+}
+
+.photo-stack-cards:focus {
+  outline: none;
+}
+
+.photo-card {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  /* 離したときにばねのように少し行きすぎて戻る */
+  transition: transform 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
+}
+
+.photo-card.top {
+  cursor: grab;
+}
+
+.photo-card.dragging {
+  cursor: grabbing;
+  transition: none;
+}
+
+.photo-card.hidden {
+  visibility: hidden;
+}
+
+.polaroid {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 7px;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 8px 8px 0;
+  border-radius: 3px;
+  background: #fafeff;
+  color: #2b2a26;
+  box-shadow: 4px 8px 14px -6px rgba(0, 0, 0, 0.5), 0 0 2px rgba(0, 0, 0, 0.3);
+  transform: translate(var(--x), var(--y)) rotate(var(--rotate));
+  transition: transform 0.3s cubic-bezier(0.3, 1.4, 0.5, 1);
+}
+
+/* いちばん上の写真はほぼまっすぐにする */
+.photo-card.top .polaroid {
+  transform: rotate(-1deg);
+}
+
+.polaroid-frame {
+  overflow: hidden;
+  border-radius: 2px;
+  background: linear-gradient(180deg, #f1f0ea, #e2e1d6);
+}
+
+.polaroid-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.polaroid figcaption {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.6em;
+  /* 手書きっぽく。日本語は OS の丸っこいフォント */
+  font-family: "Bradley Hand", "Segoe Print", "Hiragino Maru Gothic ProN", "Yu Gothic", cursive;
+  font-size: 0.95em;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  opacity: 0.7;
+}
+
+.photo-stack-hint {
+  margin: 0;
+  color: var(--text-sub);
+  font-size: 0.8em;
+}
+
+.photo-stack-close {
+  padding: 8px 20px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--bg-elev);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.9em;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.photo-stack-close:hover {
+  border-color: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photo-peek-card,
+  .photo-card,
+  .polaroid {
+    transition: none;
+  }
+
+  .photo-stack[open] .photo-stack-cards {
+    animation: none;
+  }
 }
 
 /* career part */

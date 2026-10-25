@@ -151,8 +151,18 @@
           <div class="travel-info">
             <h3>Travel</h3>
             <p class="travel-count">34<small>countries + Antarctica</small></p>
+            <!-- 写真の束を開くボタン。写真があるときだけ JS で出す -->
+            <button type="button" class="photo-peek" aria-label="旅行の写真を見る" hidden>
+              <span class="photo-peek-card"><img src="data:," alt=""></span>
+              <span class="photo-peek-card"><img src="data:," alt=""></span>
+              <span class="photo-peek-text">Photos</span>
+            </button>
           </div>
-          <img class="travel-map" src="images/world-map.svg" width="960" height="473" loading="lazy" alt="行った国を塗った世界地図">
+          <!-- JS で SVG をページに埋め込み、行った国を押すとその国の写真を出す。埋め込めないときは画像のまま -->
+          <div class="travel-map-wrap">
+            <img class="travel-map" src="images/world-map.svg" width="960" height="473" loading="lazy" alt="行った国を塗った世界地図">
+            <p class="travel-label" aria-hidden="true"></p>
+          </div>
         </div>
       </div>
     </section>
@@ -324,6 +334,14 @@
       </div>
     </section>
   </main>
+
+  <!-- 旅行の写真の束。いちばん上の写真をドラッグするか押すと、束のいちばん下に回る -->
+  <dialog class="photo-stack" aria-label="旅行の写真">
+    <!-- 開いたときは束にフォーカスを置いて、そのまま ← → キーでめくれるようにする -->
+    <div class="photo-stack-cards" tabindex="-1" autofocus></div>
+    <p class="photo-stack-hint">ドラッグ・クリック・← → キーでめくれます</p>
+    <button type="button" class="photo-stack-close">閉じる</button>
+  </dialog>
 
   <footer class="site-footer">
     <p class="analytics-note">利用状況の計測のために Google Analytics を利用しています。</p>
@@ -514,6 +532,272 @@
     document.addEventListener('visibilitychange', update);
     reduceMotion.addEventListener('change', update);
     update();
+  })();
+
+  // 旅行の写真。国名は world-atlas の英語名(scripts/build_world_map.py の VISITED と同じ)。写真は images/travel/ に置く
+  // 並びは写真の束の上からの順番
+  var TRAVEL_PHOTOS = [
+    { country: 'Jordan', src: 'images/icon-circle.jpg', caption: 'ペトラ遺跡の野良猫' }
+  ];
+
+  // 写真の束(catnose.me の写真の見せ方を参考にした)
+  // いちばん上の写真をドラッグして遠くまで動かすか押すと、束のいちばん下に回る。近くで離すと戻る
+  var openPhotoStack = (function() {
+    var dialog = document.querySelector('.photo-stack');
+    var stack = document.querySelector('.photo-stack-cards');
+    var closeButton = document.querySelector('.photo-stack-close');
+    if (!dialog || !stack || !closeButton || !dialog.showModal || !TRAVEL_PHOTOS.length) return null;
+    var SHOWN = 4;          // 重ねて見せる枚数
+    var SENSITIVITY = 110;  // これより遠くまでドラッグしたらめくる(px)
+    var TILT = 0.35;        // ドラッグしたときの傾き(1pxあたりの角度)
+    // 写真ごとの傾きとずれ。きっちり重ねず、手で置いたように少しずつ散らす
+    var SCATTER = [[-7, 2, 0], [6, -3, 2], [-3, 4, -2], [9, -2, 1], [-5, 3, -3], [4, 1, 3]];
+    var deck = [];
+    var closing = null;
+
+    // 写真ごとにポラロイドを1枚作っておく
+    var cards = TRAVEL_PHOTOS.map(function(photo, i) {
+      var card = document.createElement('div');
+      card.className = 'photo-card';
+      var s = SCATTER[i % SCATTER.length];
+      card.innerHTML = '<figure class="polaroid"><div class="polaroid-frame"><img alt=""></div><figcaption></figcaption></figure>';
+      var polaroid = card.firstChild;
+      polaroid.style.setProperty('--rotate', s[0] + 'deg');
+      polaroid.style.setProperty('--x', s[1] + 'px');
+      polaroid.style.setProperty('--y', s[2] + 'px');
+      card.querySelector('img').alt = photo.caption ? photo.caption + '(' + photo.country + ')' : photo.country;
+      card.querySelector('figcaption').textContent = photo.caption || photo.country;
+      card.photo = photo;
+      return card;
+    });
+
+    // 束の順番どおりに重ねる。見えない写真は読み込まない
+    function layout() {
+      deck.forEach(function(card, i) {
+        card.style.zIndex = deck.length - i;
+        card.classList.toggle('top', i === 0);
+        card.classList.toggle('hidden', i >= SHOWN);
+        if (i < SHOWN) {
+          var img = card.querySelector('img');
+          if (!img.getAttribute('src')) img.src = card.photo.src;
+        }
+      });
+    }
+
+    function next() {
+      deck.push(deck.shift());
+      layout();
+    }
+
+    function prev() {
+      deck.unshift(deck.pop());
+      layout();
+    }
+
+    function open(country) {
+      // 押した国の写真をいちばん上にする
+      deck = cards.filter(function(c) { return c.photo.country === country; })
+        .concat(cards.filter(function(c) { return c.photo.country !== country; }));
+      deck.forEach(function(card) {
+        card.style.transform = '';
+        stack.appendChild(card);
+      });
+      layout();
+      clearTimeout(closing);
+      dialog.classList.remove('closing');
+      dialog.showModal();
+    }
+
+    // 縮みながら消えてから閉じる
+    function close() {
+      if (!dialog.open || dialog.classList.contains('closing')) return;
+      dialog.classList.add('closing');
+      closing = setTimeout(function() {
+        dialog.classList.remove('closing');
+        dialog.close();
+      }, 250);
+    }
+
+    // いちばん上の写真のドラッグ
+    var drag = null;
+    stack.addEventListener('pointerdown', function(e) {
+      var card = e.target.closest('.photo-card');
+      if (!card || card !== deck[0] || e.button !== 0) return;
+      e.preventDefault();
+      card.setPointerCapture(e.pointerId);
+      card.classList.add('dragging');
+      drag = { card: card, x: e.clientX, y: e.clientY, dx: 0, dy: 0 };
+    });
+    stack.addEventListener('pointermove', function(e) {
+      if (!drag) return;
+      drag.dx = e.clientX - drag.x;
+      drag.dy = e.clientY - drag.y;
+      // 引っぱった方向に、紙を持ち上げたように傾ける
+      drag.card.style.transform = 'translate(' + drag.dx + 'px, ' + drag.dy + 'px) ' +
+        'rotateX(' + (-drag.dy * TILT) + 'deg) rotateY(' + (drag.dx * TILT) + 'deg)';
+    });
+    function endDrag() {
+      if (!drag) return;
+      var card = drag.card;
+      var moved = Math.max(Math.abs(drag.dx), Math.abs(drag.dy));
+      drag = null;
+      card.classList.remove('dragging');
+      // ばねのように元の位置(めくったときは束のいちばん下)に戻る
+      card.style.transform = '';
+      // 遠くまで動かしたか、ほとんど動かさずに離した(クリック)ときはめくる
+      if (moved > SENSITIVITY || moved < 4) next();
+    }
+    stack.addEventListener('pointerup', endDrag);
+    stack.addEventListener('pointercancel', endDrag);
+
+    dialog.addEventListener('keydown', function(e) {
+      if (e.key === 'ArrowRight') next();
+      if (e.key === 'ArrowLeft') prev();
+    });
+    // Esc でもアニメーションしてから閉じる
+    dialog.addEventListener('cancel', function(e) {
+      e.preventDefault();
+      close();
+    });
+    closeButton.addEventListener('click', close);
+    // 写真の外を押したら閉じる
+    dialog.addEventListener('click', function(e) {
+      if (e.target === dialog) close();
+    });
+
+    // Travel カードの小さなポラロイド(最後の2枚を見せる)
+    var peek = document.querySelector('.photo-peek');
+    if (peek) {
+      var peekImages = peek.querySelectorAll('img');
+      var last = TRAVEL_PHOTOS.length - 1;
+      peekImages[0].src = TRAVEL_PHOTOS[Math.max(0, last - 1)].src;
+      peekImages[1].src = TRAVEL_PHOTOS[last].src;
+      peek.hidden = false;
+      peek.addEventListener('click', function() { open(TRAVEL_PHOTOS[0].country); });
+    }
+
+    return open;
+  })();
+
+  // 世界地図の行った国を押すと、その国の写真の束を開く
+  (function() {
+    var wrap = document.querySelector('.travel-map-wrap');
+    var img = document.querySelector('.travel-map');
+    var label = document.querySelector('.travel-label');
+    if (!wrap || !img || !label || !window.fetch) return;
+    var hasPhoto = {};
+    TRAVEL_PHOTOS.forEach(function(p) { hasPhoto[p.country] = true; });
+
+    function show(name) {
+      if (openPhotoStack && hasPhoto[name]) openPhotoStack(name);
+    }
+
+    // 選んでいる国を明るくして、国名を地図に重ねて出す
+    var active = null;
+    function activate(el) {
+      if (el === active) return;
+      if (active) active.classList.remove('active');
+      active = el;
+      if (!el) {
+        label.classList.remove('show');
+        wrap.style.cursor = '';
+        return;
+      }
+      el.classList.add('active');
+      wrap.style.cursor = el.classList.contains('has-photo') ? 'pointer' : '';
+      var box = el.getBoundingClientRect();
+      var base = wrap.getBoundingClientRect();
+      label.textContent = el.dataset.name;
+      label.style.left = (box.left + box.width / 2 - base.left) + 'px';
+      label.style.top = (box.top - base.top) + 'px';
+      label.classList.add('show');
+    }
+
+    // 地図が見えそうになってから読み込む(img の loading="lazy" と同じ考え)
+    new IntersectionObserver(function(entries, observer) {
+      if (!entries[0].isIntersecting) return;
+      observer.disconnect();
+      fetch(img.src).then(function(res) {
+        return res.ok ? res.text() : Promise.reject(res.status);
+      }).then(function(text) {
+        var svg = new DOMParser().parseFromString(text, 'image/svg+xml').documentElement;
+        if (svg.nodeName !== 'svg') return;
+        svg.classList.add('travel-map');
+        // role="img" のままだと中の国を押せることが読み上げで伝わらない
+        svg.setAttribute('role', 'group');
+        var visited = Array.prototype.slice.call(svg.querySelectorAll('.visited'));
+        visited.forEach(function(el) {
+          // 自前で国名を出すので、ブラウザの title のツールチップは消す
+          var title = el.querySelector('title');
+          el.dataset.name = title ? title.textContent : '';
+          if (title) title.remove();
+          if (openPhotoStack && hasPhoto[el.dataset.name]) {
+            el.classList.add('has-photo');
+            el.setAttribute('tabindex', '0');
+            el.setAttribute('role', 'button');
+            el.setAttribute('aria-label', el.dataset.name + 'の写真を見る');
+          }
+          el.addEventListener('focus', function() { activate(el); });
+          el.addEventListener('blur', function() { activate(null); });
+          el.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              show(el.dataset.name);
+            }
+          });
+        });
+
+        // 小さい国は押しにくいので、国の上でなくても近くにある行った国を選ぶ
+        var SNAP = 16;  // これより近ければ選ぶ(画面上のpx)
+        var samples = null;
+        // 国の輪郭の上に点を打っておき、一番近い点の国を探す
+        function sample() {
+          samples = [];
+          visited.forEach(function(el) {
+            if (el.nodeName === 'circle') {
+              samples.push({ el: el, x: el.cx.baseVal.value, y: el.cy.baseVal.value });
+              return;
+            }
+            var length = el.getTotalLength();
+            var n = Math.max(8, Math.ceil(length / 3));
+            for (var i = 0; i < n; i++) {
+              var p = el.getPointAtLength(length * i / n);
+              samples.push({ el: el, x: p.x, y: p.y });
+            }
+          });
+        }
+
+        function hit(e) {
+          var direct = e.target.closest && e.target.closest('.visited');
+          if (direct) return direct;
+          if (!samples) sample();
+          var ctm = svg.getScreenCTM();
+          if (!ctm) return null;
+          var point = new DOMPoint(e.clientX, e.clientY).matrixTransform(ctm.inverse());
+          var limit = SNAP / ctm.a;  // 画面のpxを地図の座標に直す
+          var best = null;
+          var bestDist = limit * limit;
+          samples.forEach(function(s) {
+            var d = (s.x - point.x) * (s.x - point.x) + (s.y - point.y) * (s.y - point.y);
+            if (d < bestDist) {
+              bestDist = d;
+              best = s.el;
+            }
+          });
+          return best;
+        }
+
+        svg.addEventListener('pointermove', function(e) { activate(hit(e)); });
+        svg.addEventListener('pointerleave', function() { activate(null); });
+        svg.addEventListener('click', function(e) {
+          var el = hit(e);
+          activate(el);
+          if (el) show(el.dataset.name);
+        });
+        img.replaceWith(svg);
+      }).catch(function() {});
+    }, { rootMargin: '200px' }).observe(wrap);
+
   })();
 
   // アイコンを押すたびに1回転させる。連打すると回転が足されて速く回り、3回続けて押すと鳴く
