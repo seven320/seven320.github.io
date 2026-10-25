@@ -65,7 +65,7 @@ uv run scripts/build_world_map.py /tmp/countries-110m.json
 
 ## 旅行の写真を足す
 
-世界地図で行った国を押すと、その国の写真をポラロイドの束で見せています。写真は `images/travel/` に置き、`index.html` の `TRAVEL_PHOTOS` に1行足します。書いた順番が、写真の束の上からの順番になります。
+世界地図で行った国を押すと、その国の写真を重ねたカードの束で見せています。写真は `images/travel/` に置き、`index.html` の `TRAVEL_PHOTOS` に1行足します。書いた順番が、写真の束の上からの順番になります。
 
 ```js
 { country: 'Peru', src: 'images/travel/peru-1.webp', caption: 'マチュピチュの朝' },
