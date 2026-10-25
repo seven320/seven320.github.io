@@ -41,6 +41,12 @@ html {
   scroll-behavior: smooth;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 body {
   margin: 0;
   background-color: var(--bg);
@@ -58,6 +64,31 @@ a {
 
 a:hover {
   text-decoration: underline;
+}
+
+/* キーボードで操作しているときだけフォーカスの枠を出す */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+
+/* キーボードで最初にTabを押したときだけ出る */
+.skip-link {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 20;
+  padding: 8px 16px;
+  border-radius: 8px;
+  background: var(--accent);
+  color: var(--bg);
+  font-weight: 700;
+  transform: translateY(-200%);
+}
+
+.skip-link:focus {
+  transform: none;
 }
 
 .container {
@@ -187,6 +218,20 @@ a:hover {
   flex-shrink: 0;
 }
 
+.icon-btn {
+  display: block;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: none;
+  cursor: pointer;
+}
+
+.icon-btn:focus-visible {
+  outline-offset: 6px;
+  border-radius: 50%;
+}
+
 .icon {
   display: block;
   width: 180px;
@@ -195,7 +240,6 @@ a:hover {
   object-fit: cover;
   border: 3px solid var(--bg);
   box-shadow: 0 0 0 3px var(--kaggle-master), 0 20px 60px rgba(255, 92, 25, 0.25);
-  cursor: pointer;
   /* 押すたびに回る。連打したときに勢いよく回って、ゆっくり止まる */
   transition: transform 0.8s cubic-bezier(0.2, 0.8, 0.3, 1);
 }
@@ -330,6 +374,13 @@ a.badge:not(.badge-master) {
   border-color: var(--accent);
   transform: translateY(-2px);
   text-decoration: none;
+}
+
+/* 404ページ: ヒーローだけで画面を埋める */
+.not-found {
+  display: flex;
+  align-items: center;
+  min-height: calc(100vh - 61px - 90px);
 }
 
 /* section common */

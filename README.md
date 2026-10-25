@@ -20,10 +20,12 @@
 ```
 .
 ├── index.html                 # ページ本体（ヒーローの水面エフェクトの JS もここ）
+├── 404.html                   # 存在しない URL を開いたときのページ
 ├── css/stylesheet.css         # スタイル
 ├── fonts/                     # Web フォント（Inter, JetBrains Mono のラテン文字部分を自前で配信）
 ├── images/                    # アイコン・作品画像・世界地図
-└── scripts/build_world_map.py # 世界地図 (images/world-map.svg) の生成スクリプト
+├── scripts/build_world_map.py # 世界地図 (images/world-map.svg) の生成スクリプト
+└── .github/workflows/check.yml # HTML の検証とリンク切れチェック
 ```
 
 - **水面エフェクト**: ヒーロー部分の背景は canvas に描いています。毎秒の時刻を SHA-256 でハッシュ化した値で水滴を落とし、波動方程式で波紋を広げています。画面外にあるときやタブが裏にあるとき、`prefers-reduced-motion` が有効なときは止まります。
@@ -36,6 +38,19 @@ python3 -m http.server 8000
 ```
 
 ブラウザで http://localhost:8000/ を開きます。
+
+## チェック
+
+push・プルリクエストのたびと毎週月曜に、GitHub Actions で次を確認しています。
+
+- [html-validate](https://html-validate.org/) で HTML を検証（設定は `.htmlvalidate.json`）
+- [lychee](https://github.com/lycheeverse/lychee) でリンク切れを確認（X・Instagram はボットを弾くので対象外）
+
+手元で HTML を検証するときは次を実行します。
+
+```sh
+npx html-validate@9 index.html 404.html
+```
 
 ## 世界地図を更新する
 
