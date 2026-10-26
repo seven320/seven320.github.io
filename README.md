@@ -58,10 +58,23 @@ npx html-validate@9 index.html 404.html
 
 ```sh
 curl -sL -o /tmp/countries-110m.json https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json
-python3 scripts/build_world_map.py /tmp/countries-110m.json
+uv run scripts/build_world_map.py /tmp/countries-110m.json
 ```
 
 国の数は `index.html` の `travel-count` に手で書いているので、あわせて更新してください。
+
+## 旅行の写真を足す
+
+世界地図で行った国を押すと、その国の写真を重ねたカードの束で見せています。写真は `images/travel/` に置き、`index.html` の `TRAVEL_PHOTOS` に1行足します。書いた順番が、写真の束の上からの順番になります。
+
+```js
+{ country: 'Peru', src: 'images/travel/peru-1.webp', caption: 'マチュピチュの朝' },
+```
+
+- 国名は `scripts/build_world_map.py` の `VISITED` と同じ英語名にします
+- 置く前に、写真の向きを直してから撮影場所の GPS などの EXIF を消します（スマホの写真には位置情報が入っていることが多いです）
+- 長い辺を 1200px くらいに縮めて、WebP か JPEG にします。iPhone の HEIC は Safari 以外で表示できないので変換します
+- ファイル名は `peru-1.webp` のように英小文字にします
 
 ## クレジット
 

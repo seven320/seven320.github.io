@@ -1,8 +1,12 @@
+# /// script
+# requires-python = ">=3.11"
+# dependencies = []
+# ///
 """行った国を塗った世界地図(images/world-map.svg)を作る。
 
 使い方:
   curl -sL -o /tmp/countries-110m.json https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json
-  python3 scripts/build_world_map.py /tmp/countries-110m.json
+  uv run scripts/build_world_map.py /tmp/countries-110m.json
 
 行った国を増やすときは VISITED に world-atlas の国名(英語)を足して再実行する。
 """
@@ -161,10 +165,11 @@ def main(topo_path):
         paths.append(f'  <circle class="visited" cx="{x:.1f}" cy="{y:.1f}" r="3"><title>{html.escape(name)}</title></circle>')
 
     svg = "\n".join([
-        f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {WIDTH} {height:.0f}" role="img" aria-label="行った国の世界地図">',
+        # ページに直接埋め込んでも他の SVG に効かないように、スタイルは .world-map の中だけにする
+        f'<svg xmlns="http://www.w3.org/2000/svg" class="world-map" viewBox="0 0 {WIDTH} {height:.0f}" role="img" aria-label="行った国の世界地図">',
         "  <style>",
-        "    path { fill: #243049; stroke: #0b0f17; stroke-width: 0.5; }",
-        "    .visited { fill: #38e1c4; }",
+        "    .world-map path { fill: #243049; stroke: #0b0f17; stroke-width: 0.5; }",
+        "    .world-map .visited { fill: #38e1c4; }",
         "  </style>",
         *paths,
         "</svg>",
