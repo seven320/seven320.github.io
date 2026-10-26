@@ -74,7 +74,7 @@
       <!-- イースターエッグ: アイコンを押すと回る。連打すると鳴く。キーボードでも押せるようにボタンにしている -->
       <div class="icon-wrap">
         <button type="button" class="icon-btn" title="ヨルダン・ペトラ遺跡の野良猫">
-          <img class="icon" src="images/icon-circle.jpg" width="239" height="249" alt="ヨルダン・ペトラ遺跡の野良猫">
+          <img class="icon" src="images/icon-circle.jpg" width="480" height="480" alt="ヨルダン・ペトラ遺跡の野良猫">
         </button>
         <span class="icon-bubble" aria-hidden="true"></span>
       </div>
@@ -537,8 +537,16 @@
   // 旅行の写真。国名は world-atlas の英語名(scripts/build_world_map.py の VISITED と同じ)。写真は images/travel/ に置く
   // 並びは写真の束の上からの順番
   var TRAVEL_PHOTOS = [
-    { country: 'Antarctica', src: 'images/travel/antarctica-1.webp', caption: '' },
-    { country: 'Jordan', src: 'images/icon-circle.jpg', caption: 'ペトラ遺跡の野良猫' }
+    { country: 'Antarctica', src: 'images/travel/antarctica-1.webp', caption: '', date: '2025-01-01' },
+    { country: 'Jordan', src: 'images/travel/jordan-1.webp', caption: 'ペトラ遺跡の野良猫' },
+    { country: 'Bolivia', src: 'images/travel/bolivia-1.webp', caption: 'ウユニ塩湖の鏡張り', geo: [-20.3048, -66.9325], date: '2017-03-24' },
+    { country: 'Bolivia', src: 'images/travel/bolivia-2.webp', caption: 'ウユニ塩湖の夕日', date: '2017-03-24' },
+    { country: 'Cuba', src: 'images/travel/cuba-1.webp', caption: 'ハバナのクラシックカー', geo: [23.1337, -82.3584], date: '2017-01-13' },
+    { country: 'Ecuador', src: 'images/travel/ecuador-1.webp', caption: 'アシカと遊ぶ', geo: [-0.9622, -90.9572], date: '2017-02-12' },
+    { country: 'Mongolia', src: 'images/travel/mongolia-1.webp', caption: '駅で列車を待つ', date: '2017-09-17' },
+    { country: 'Mongolia', src: 'images/travel/mongolia-2.webp', caption: '草原のラクダ', geo: [47.331, 103.691], date: '2017-09-19' },
+    { country: 'Peru', src: 'images/travel/peru-1.webp', caption: 'アンデスの谷', geo: [-8.9392, -77.6833], date: '2017-02-24' },
+    { country: 'Peru', src: 'images/travel/peru-2.webp', caption: '山で出会った犬たち', date: '2017-02-24' }
   ];
 
   // 写真の束(重ねてめくる見せ方は catnose.me を参考にした)
@@ -556,12 +564,19 @@
     var deck = [];
     var closing = null;
 
+    // [-20.3048, -66.9325] -> 20.3048°S 66.9325°W
+    function formatGeo(geo) {
+      var lat = Math.abs(geo[0]).toFixed(4) + '°' + (geo[0] < 0 ? 'S' : 'N');
+      var lon = Math.abs(geo[1]).toFixed(4) + '°' + (geo[1] < 0 ? 'W' : 'E');
+      return lat + ' ' + lon;
+    }
+
     // 写真ごとにカードを1枚作っておく
     var cards = TRAVEL_PHOTOS.map(function(photo, i) {
       var card = document.createElement('div');
       card.className = 'photo-card';
       var s = SCATTER[i % SCATTER.length];
-      card.innerHTML = '<figure class="shot"><div class="shot-image"><img alt=""><span class="shot-corners"></span></div>' +
+      card.innerHTML = '<figure class="shot"><div class="shot-image"><img alt=""><span class="shot-corners"></span><span class="shot-geo"></span><span class="shot-date"></span></div>' +
         '<figcaption class="shot-meta"><span class="shot-index"></span><span class="shot-country"></span><span class="shot-caption"></span></figcaption></figure>';
       var shot = card.firstChild;
       shot.style.setProperty('--rotate', s[0] + 'deg');
@@ -573,6 +588,9 @@
       card.querySelector('.shot-index').textContent = pad(i + 1) + ' / ' + pad(TRAVEL_PHOTOS.length);
       card.querySelector('.shot-country').textContent = photo.country;
       card.querySelector('.shot-caption').textContent = photo.caption || '';
+      // 撮影場所と撮影日を、カメラの画面のように写真の上に出す
+      card.querySelector('.shot-geo').textContent = photo.geo ? formatGeo(photo.geo) : '';
+      card.querySelector('.shot-date').textContent = photo.date ? photo.date.replace(/-/g, '.') : '';
       card.photo = photo;
       return card;
     });
@@ -676,9 +694,14 @@
     if (peek) {
       var peekImages = peek.querySelectorAll('img');
       var last = TRAVEL_PHOTOS.length - 1;
-      peekImages[0].src = TRAVEL_PHOTOS[Math.max(0, last - 1)].src;
-      peekImages[1].src = TRAVEL_PHOTOS[last].src;
       peek.hidden = false;
+      // 画面の近くに来てから読む(loading="lazy" はかなり手前で読んでしまうので自前で見張る)
+      new IntersectionObserver(function(entries, observer) {
+        if (!entries[0].isIntersecting) return;
+        observer.disconnect();
+        peekImages[0].src = TRAVEL_PHOTOS[Math.max(0, last - 1)].src;
+        peekImages[1].src = TRAVEL_PHOTOS[last].src;
+      }, { rootMargin: '200px' }).observe(peek);
       peek.addEventListener('click', function() { open(TRAVEL_PHOTOS[0].country); });
     }
 

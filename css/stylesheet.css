@@ -797,6 +797,34 @@ a.badge:not(.badge-master) {
   opacity: 0.8;
 }
 
+/* 撮影場所と撮影日: 写真の下の角に、カメラの画面のように重ねる */
+.shot-geo,
+.shot-date {
+  position: absolute;
+  bottom: 14px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(11, 15, 23, 0.55);
+  color: #e6edf7;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.68em;
+  letter-spacing: 0.04em;
+  pointer-events: none;
+}
+
+.shot-geo {
+  left: 22px;
+}
+
+.shot-date {
+  right: 22px;
+}
+
+.shot-geo:empty,
+.shot-date:empty {
+  display: none;
+}
+
 /* 写真の情報: 番号・国・説明を1行に並べる */
 .shot-meta {
   display: flex;
