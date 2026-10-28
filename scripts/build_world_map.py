@@ -2,11 +2,14 @@
 # requires-python = ">=3.11"
 # dependencies = []
 # ///
-"""行った国を塗った世界地図(images/world-map.svg)を作る。
+"""行った国を塗った世界地図(images/world-map.svg)と、写真の地球儀に使う国の形(images/globe.json)を作る。
 
 使い方:
   curl -sL -o /tmp/countries-110m.json https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json
-  uv run scripts/build_world_map.py /tmp/countries-110m.json
+  curl -sL -o /tmp/countries-50m.json https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json
+  uv run scripts/build_world_map.py /tmp/countries-110m.json /tmp/countries-50m.json
+
+平らな地図は粗い 110m、地球儀は小さな島まで載っている 50m を使う(50m を省くと地球儀も 110m で作る)。
 
 行った国を増やすときは VISITED に world-atlas の国名(英語)を足して再実行する。
 """
@@ -73,7 +76,10 @@ NOT_VISITED_PARTS = {
 }
 
 WIDTH = 960
+# 地球儀は直径300pxほどなので、これより細かい海岸線の凹凸は間引く(度)
+GLOBE_TOLERANCE = 0.08
 OUT = Path(__file__).resolve().parent.parent / "images" / "world-map.svg"
+GLOBE_OUT = OUT.with_name("globe.json")
 
 
 def natural_earth(lon, lat):
@@ -179,5 +185,100 @@ def main(topo_path):
     print(f"wrote {OUT} ({len(VISITED) + len(VISITED_POINTS)} places, {len(svg) // 1024}KB)")
 
 
+def simplify(points, tolerance):
+    """Douglas-Peucker で、線から tolerance より近い点を間引く(両端は残す)"""
+    if len(points) < 3:
+        return points
+    (x1, y1), (x2, y2) = points[0], points[-1]
+    if (x1, y1) == (x2, y2):
+        # 閉じた線(島1つぶん)は、いちばん遠い点で2つに分けてから間引く
+        far = max(range(len(points)), key=lambda i: (points[i][0] - x1) ** 2 + (points[i][1] - y1) ** 2)
+        if far == 0:
+            return points[:1] + points[-1:]
+        return simplify(points[: far + 1], tolerance)[:-1] + simplify(points[far:], tolerance)
+    dx, dy = x2 - x1, y2 - y1
+    length = math.hypot(dx, dy) or 1
+    distances = [abs(dy * (x - x1) - dx * (y - y1)) / length for x, y in points[1:-1]]
+    i = max(range(len(distances)), key=distances.__getitem__)
+    if distances[i] <= tolerance:
+        return [points[0], points[-1]]
+    return simplify(points[: i + 2], tolerance)[:-1] + simplify(points[i + 1 :], tolerance)
+
+
+def build_globe(topo_path):
+    """地球儀用に、緯度経度のままの国の形 (TopoJSON) を書き出す。行った国には visited を付ける"""
+    topo = json.loads(Path(topo_path).read_text(encoding="utf-8"))
+    arcs = decode_arcs(topo)
+    geometries = []
+    for geometry in topo["objects"]["countries"]["geometries"]:
+        name = geometry["properties"]["name"]
+        excluded = NOT_VISITED_PARTS.get(name)
+        visited_polygons = []
+        other_polygons = []
+        for polygon in polygons(geometry):
+            first = ring_points(polygon[0], arcs)[0]
+            if name in VISITED and not (excluded and excluded(*first)):
+                visited_polygons.append(polygon)
+            else:
+                other_polygons.append(polygon)
+        # 行った部分と行っていない部分(フランス領ギアナなど)を分けておく
+        for parts, visited in ((visited_polygons, True), (other_polygons, False)):
+            if parts:
+                properties = {"name": name, "visited": 1} if visited else {"name": name}
+                geometries.append({"type": "MultiPolygon", "arcs": parts, "properties": properties})
+
+    # 隣の国と共有している境界線も1本ずつ間引くので、国のあいだに隙間はできない
+    # 0.01°刻みの整数にそろえる(TopoJSON の quantize と同じ形で小さくなる)
+    step = 0.01
+    snapped = []
+    for arc in arcs:
+        points = [(round((lon + 180) / step), round((lat + 90) / step)) for lon, lat in simplify(arc, GLOBE_TOLERANCE)]
+        snapped.append(points[:1] + [q for p, q in zip(points, points[1:]) if q != p])
+
+    def signed_area(ring, source):
+        points = []
+        for index in ring:
+            arc = source[index] if index >= 0 else source[~index][::-1]
+            points.extend(arc if not points else arc[1:])
+        return sum(x1 * y2 - x2 * y1 for (x1, y1), (x2, y2) in zip(points, points[1:])) / 2
+
+    # 間引いて潰れた輪(面積0)や向きが裏返った輪は、d3 が「輪の外側=地球全体」と取り違えて
+    # 回している途中にちらつくので捨てる
+    def keep(ring):
+        area = signed_area(ring, snapped)
+        return area != 0 and (area > 0) == (signed_area(ring, arcs) > 0)
+
+    for geometry in geometries:
+        geometry["arcs"] = [[ring for ring in polygon if keep(ring)] for polygon in geometry["arcs"] if keep(polygon[0])]
+    geometries = [g for g in geometries if g["arcs"]]
+
+    # 使わなくなった線を除いて番号を詰め、前の点との差で書く
+    used = sorted({i if i >= 0 else ~i for g in geometries for polygon in g["arcs"] for ring in polygon for i in ring})
+    renumber = {old: new for new, old in enumerate(used)}
+    for geometry in geometries:
+        geometry["arcs"] = [[[renumber[i] if i >= 0 else ~renumber[~i] for i in ring] for ring in polygon] for polygon in geometry["arcs"]]
+    simplified = []
+    for old in used:
+        x0 = y0 = 0
+        encoded = []
+        for x, y in snapped[old]:
+            encoded.append([x - x0, y - y0])
+            x0, y0 = x, y
+        simplified.append(encoded)
+    globe = {
+        "type": "Topology",
+        "transform": {"scale": [step, step], "translate": [-180, -90]},
+        "arcs": simplified,
+        "objects": {"countries": {"type": "GeometryCollection", "geometries": geometries}},
+        # 地図データの形が小さすぎて見えない島 (経度, 緯度)
+        "points": VISITED_POINTS,
+    }
+    GLOBE_OUT.write_text(json.dumps(globe, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    before = sum(len(a) for a in arcs)
+    after = sum(len(a) for a in simplified)
+    print(f"wrote {GLOBE_OUT} ({before} -> {after} points, {GLOBE_OUT.stat().st_size // 1024}KB)")
+
+
 if __name__ == "__main__":
     main(sys.argv[1])
+    build_globe(sys.argv[2] if len(sys.argv) > 2 else sys.argv[1])
