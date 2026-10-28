@@ -24,7 +24,7 @@
 ├── css/stylesheet.css         # スタイル
 ├── fonts/                     # Web フォント（Inter, JetBrains Mono のラテン文字部分を自前で配信）
 ├── images/                    # アイコン・作品画像・世界地図
-├── scripts/build_world_map.py # 世界地図 (images/world-map.svg) の生成スクリプト
+├── scripts/build_world_map.py # 世界地図 (images/world-map.svg) と写真の地球儀の国の形 (images/globe.json) の生成スクリプト
 └── .github/workflows/check.yml # HTML の検証とリンク切れチェック
 ```
 
@@ -58,8 +58,11 @@ npx html-validate@9 index.html 404.html
 
 ```sh
 curl -sL -o /tmp/countries-110m.json https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json
-uv run scripts/build_world_map.py /tmp/countries-110m.json
+curl -sL -o /tmp/countries-50m.json https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-50m.json
+uv run scripts/build_world_map.py /tmp/countries-110m.json /tmp/countries-50m.json
 ```
+
+平らな地図 (`images/world-map.svg`) は粗い 110m、写真の横の地球儀 (`images/globe.json`) は小さな島まで載っている 50m から作ります。
 
 国の数は `index.html` の `travel-count` に手で書いているので、あわせて更新してください。
 

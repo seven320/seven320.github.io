@@ -338,7 +338,15 @@
   <!-- 旅行の写真の束。いちばん上の写真をドラッグするか押すと、束のいちばん下に回る -->
   <dialog class="photo-stack" aria-label="旅行の写真">
     <!-- 開いたときは束にフォーカスを置いて、そのまま ← → キーでめくれるようにする -->
-    <div class="photo-stack-cards" tabindex="-1" autofocus></div>
+    <div class="photo-stack-main">
+      <div class="photo-stack-cards" tabindex="-1" autofocus></div>
+      <!-- いちばん上の写真を撮った場所に回る地球儀。読み込めないときは出さない -->
+      <div class="photo-globe-wrap" aria-hidden="true" hidden>
+        <canvas class="photo-globe"></canvas>
+        <span class="photo-globe-pulse" hidden></span>
+        <p class="photo-globe-label"></p>
+      </div>
+    </div>
     <p class="photo-stack-hint">drag / click / ← → でめくる</p>
     <button type="button" class="photo-stack-close">閉じる</button>
   </dialog>
@@ -550,11 +558,183 @@
   ];
 
   // 写真の束(重ねてめくる見せ方は catnose.me を参考にした)
+  // [-20.3048, -66.9325] -> 20.3048°S 66.9325°W
+  function formatGeo(geo) {
+    var lat = Math.abs(geo[0]).toFixed(4) + '°' + (geo[0] < 0 ? 'S' : 'N');
+    var lon = Math.abs(geo[1]).toFixed(4) + '°' + (geo[1] < 0 ? 'W' : 'E');
+    return lat + ' ' + lon;
+  }
+
+  // 写真の束の横の地球儀。いちばん上の写真を撮った場所まで回してピンを刺す
+  // 地図のライブラリと国の形は、はじめて写真を開いたときに読み込む
+  var photoGlobe = (function() {
+    var wrap = document.querySelector('.photo-globe-wrap');
+    var canvas = document.querySelector('.photo-globe');
+    var label = document.querySelector('.photo-globe-label');
+    var pulse = document.querySelector('.photo-globe-pulse');
+    if (!wrap || !canvas || !pulse || !canvas.getContext || !window.fetch) return null;
+    var LIBS = [
+      'https://cdn.jsdelivr.net/npm/d3-array@3.2.4/dist/d3-array.min.js',
+      'https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/dist/d3-geo.min.js',
+      'https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js'
+    ];
+    var TURN = 900;  // 次の場所まで回る時間(ms)
+    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    var ready = null;
+    var countries = [];
+    var islands = [];
+    var centers = {};
+    var graticule = null;
+    var rotation = [-140, -20];
+    var turn = null;   // { from, to, start }
+    var pin = null;    // { lonLat, exact }
+    var frame = 0;
+
+    function loadScript(src) {
+      return new Promise(function(resolve, reject) {
+        var script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = reject;
+        document.head.appendChild(script);
+      });
+    }
+
+    function load() {
+      if (ready) return ready;
+      // d3-geo は d3-array を使うので順番に読む
+      ready = LIBS.reduce(function(chain, src) {
+        return chain.then(function() { return loadScript(src); });
+      }, Promise.resolve()).then(function() {
+        return fetch('images/globe.json');
+      }).then(function(res) {
+        return res.ok ? res.json() : Promise.reject(res.status);
+      }).then(function(topo) {
+        countries = topojson.feature(topo, topo.objects.countries).features;
+        countries.forEach(function(f) {
+          if (f.properties.visited) centers[f.properties.name] = d3.geoCentroid(f);
+        });
+        Object.keys(topo.points || {}).forEach(function(name) {
+          centers[name] = topo.points[name];
+          islands.push(topo.points[name]);
+        });
+        graticule = d3.geoGraticule10();
+        wrap.hidden = false;
+      });
+      ready.catch(function() { wrap.hidden = true; });
+      return ready;
+    }
+
+    function ease(t) {
+      return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    }
+
+    // 地球儀とピンを描く。回っている間だけ呼ばれ、止まったら何も描かない
+    function draw(now) {
+      var size = canvas.clientWidth;
+      if (!size) return;
+      var dpr = window.devicePixelRatio || 1;
+      var px = Math.round(size * dpr);
+      if (canvas.width !== px || canvas.height !== px) canvas.width = canvas.height = px;
+      if (turn) {
+        // 回し始めの時刻は、最初に描くときのコマの時刻にそろえる
+        if (turn.start === null) turn.start = now;
+        var t = reduceMotion ? 1 : Math.min(1, (now - turn.start) / TURN);
+        var k = ease(t);
+        rotation = [turn.from[0] + (turn.to[0] - turn.from[0]) * k, turn.from[1] + (turn.to[1] - turn.from[1]) * k];
+        if (t === 1) turn = null;
+      }
+      var projection = d3.geoOrthographic().scale(size / 2 - 2).translate([size / 2, size / 2]).rotate(rotation);
+      var front = [-rotation[0], -rotation[1]];
+      var ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, size, size);
+      var path = d3.geoPath(projection, ctx);
+      ctx.beginPath();
+      path({ type: 'Sphere' });
+      ctx.fillStyle = '#0f1522';
+      ctx.fill();
+      ctx.beginPath();
+      path(graticule);
+      ctx.strokeStyle = 'rgba(56, 225, 196, 0.1)';
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
+      countries.forEach(function(f) {
+        ctx.beginPath();
+        path(f);
+        ctx.fillStyle = f.properties.visited ? '#2bb8a1' : '#243049';
+        ctx.fill();
+      });
+      ctx.fillStyle = '#2bb8a1';
+      islands.forEach(function(p) {
+        if (d3.geoDistance(p, front) > Math.PI / 2) return;
+        var xy = projection(p);
+        ctx.beginPath();
+        ctx.arc(xy[0], xy[1], 2, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.beginPath();
+      path({ type: 'Sphere' });
+      ctx.strokeStyle = 'rgba(56, 225, 196, 0.45)';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+
+      // ピン: 撮影場所が分かる写真は塗った針、分からない写真は国の真ん中に輪だけ
+      var visible = pin && d3.geoDistance(pin.lonLat, front) < Math.PI / 2;
+      // 波紋は CSS のアニメーションで、止まっている間は canvas を描き直さない
+      pulse.hidden = !visible || !!turn;
+      if (!visible) return;
+      var p = projection(pin.lonLat);
+      pulse.style.left = canvas.offsetLeft + p[0] + 'px';
+      pulse.style.top = canvas.offsetTop + p[1] + 'px';
+      ctx.beginPath();
+      ctx.moveTo(p[0], p[1]);
+      ctx.lineTo(p[0], p[1] - 16);
+      ctx.strokeStyle = '#ffb454';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(p[0], p[1] - 16, 4, 0, Math.PI * 2);
+      if (pin.exact) {
+        ctx.fillStyle = '#ffb454';
+        ctx.fill();
+      } else {
+        ctx.fillStyle = '#0f1522';
+        ctx.fill();
+        ctx.stroke();
+      }
+    }
+
+    function loop(now) {
+      draw(now);
+      // 回り終わったら止める
+      frame = turn ? requestAnimationFrame(loop) : 0;
+    }
+
+    // 写真の場所まで回す
+    function show(photo) {
+      load().then(function() {
+        var lonLat = photo.geo ? [photo.geo[1], photo.geo[0]] : centers[photo.country];
+        if (!lonLat) return;
+        pin = { lonLat: lonLat, exact: !!photo.geo };
+        label.textContent = photo.geo ? formatGeo(photo.geo) : photo.country.toUpperCase() + ' (位置情報なし)';
+        // 遠回りしないように、経度は差が180°以内になる方へ回す
+        var to = [-lonLat[0], Math.max(-60, Math.min(60, -lonLat[1]))];
+        to[0] = rotation[0] + ((to[0] - rotation[0]) % 360 + 540) % 360 - 180;
+        turn = { from: rotation.slice(), to: to, start: null };
+        if (!frame) frame = requestAnimationFrame(loop);
+      }, function() {});
+    }
+
+    return { show: show };
+  })();
+
   // いちばん上の写真をドラッグして遠くまで動かすか押すと、束のいちばん下に回る。近くで離すと戻る
   var openPhotoStack = (function() {
     var dialog = document.querySelector('.photo-stack');
     var stack = document.querySelector('.photo-stack-cards');
     var closeButton = document.querySelector('.photo-stack-close');
+    var main = document.querySelector('.photo-stack-main');
     if (!dialog || !stack || !closeButton || !dialog.showModal || !TRAVEL_PHOTOS.length) return null;
     var SHOWN = 4;          // 重ねて見せる枚数
     var SENSITIVITY = 110;  // これより遠くまでドラッグしたらめくる(px)
@@ -563,13 +743,6 @@
     var SCATTER = [[-3, -6, 4], [2.5, 6, -3], [-1.5, -3, -6], [3.5, 4, 5], [-2.5, 5, -4], [1.5, -5, 6]];
     var deck = [];
     var closing = null;
-
-    // [-20.3048, -66.9325] -> 20.3048°S 66.9325°W
-    function formatGeo(geo) {
-      var lat = Math.abs(geo[0]).toFixed(4) + '°' + (geo[0] < 0 ? 'S' : 'N');
-      var lon = Math.abs(geo[1]).toFixed(4) + '°' + (geo[1] < 0 ? 'W' : 'E');
-      return lat + ' ' + lon;
-    }
 
     // 写真ごとにカードを1枚作っておく
     var cards = TRAVEL_PHOTOS.map(function(photo, i) {
@@ -606,6 +779,7 @@
           if (!img.getAttribute('src')) img.src = card.photo.src;
         }
       });
+      if (photoGlobe) photoGlobe.show(deck[0].photo);
     }
 
     function next() {
@@ -686,7 +860,7 @@
     closeButton.addEventListener('click', close);
     // 写真の外を押したら閉じる
     dialog.addEventListener('click', function(e) {
-      if (e.target === dialog) close();
+      if (e.target === dialog || e.target === main) close();
     });
 
     // Travel カードの小さな写真(最後の2枚を見せる)

@@ -684,11 +684,13 @@ a.badge:not(.badge-master) {
   -webkit-backdrop-filter: blur(6px);
 }
 
-.photo-stack[open] .photo-stack-cards {
+.photo-stack[open] .photo-stack-cards,
+.photo-stack[open] .photo-globe-wrap {
   animation: stack-in 0.3s ease-out;
 }
 
 .photo-stack.closing .photo-stack-cards,
+.photo-stack.closing .photo-globe-wrap,
 .photo-stack.closing .photo-stack-hint,
 .photo-stack.closing .photo-stack-close {
   opacity: 0;
@@ -703,11 +705,20 @@ a.badge:not(.badge-master) {
   }
 }
 
+/* PC では左に写真、右に地球儀。狭い画面では写真の下に小さな地球儀 */
+.photo-stack-main {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 64px;
+}
+
 .photo-stack-cards {
   position: relative;
-  /* 背の低い画面でも、下の説明と閉じるボタンまで収まる大きさにする */
-  width: min(480px, 86vw, (100vh - 240px) * 1.1);
-  width: min(480px, 86vw, (100dvh - 240px) * 1.1);
+  flex-shrink: 0;
+  /* 背の低い画面でも、下の説明と閉じるボタンまで収まる大きさにする。横は地球儀の分を空ける */
+  width: min(680px, 100vw - 440px, (100vh - 240px) * 1.1);
+  width: min(680px, 100vw - 440px, (100dvh - 240px) * 1.1);
   /* 4:3 の写真と、下の情報の行が入る比率 */
   aspect-ratio: 4 / 3.4;
   perspective: 600px;
@@ -855,6 +866,88 @@ a.badge:not(.badge-master) {
   text-overflow: ellipsis;
 }
 
+.photo-globe-wrap {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ピンの根元の波紋。canvas を描き直さずに動かすため CSS で広げる */
+.photo-globe-pulse {
+  position: absolute;
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
+  border: 1.5px solid #ffb454;
+  border-radius: 50%;
+  pointer-events: none;
+  animation: globe-pulse 1.4s ease-out infinite;
+}
+
+.photo-globe-pulse[hidden] {
+  display: none;
+}
+
+@keyframes globe-pulse {
+  from {
+    opacity: 0.8;
+    transform: scale(0.2);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(1);
+  }
+}
+
+.photo-globe-wrap[hidden] {
+  display: none;
+}
+
+.photo-globe {
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  /* filter だと毎フレーム描き直すたびに計算し直してちらつくので、形の変わらない box-shadow で光らせる */
+  box-shadow: 0 0 32px rgba(56, 225, 196, 0.18);
+}
+
+.photo-globe-label {
+  min-height: 1.4em;
+  margin: 0;
+  color: var(--text-sub);
+  font-family: "JetBrains Mono", "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", "Meiryo", monospace;
+  font-size: 0.75em;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 960px) {
+  .photo-stack[open] {
+    gap: 28px;
+  }
+
+  .photo-stack-main {
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .photo-stack-cards {
+    width: min(680px, 90vw, (100vh - 440px) * 1.1);
+    width: min(680px, 90vw, (100dvh - 440px) * 1.1);
+  }
+
+  .photo-globe-wrap {
+    gap: 8px;
+  }
+
+  .photo-globe {
+    width: 130px;
+    height: 130px;
+  }
+}
+
 .photo-stack-hint {
   margin: 0;
   color: var(--text-sub);
@@ -885,8 +978,13 @@ a.badge:not(.badge-master) {
     transition: none;
   }
 
-  .photo-stack[open] .photo-stack-cards {
+  .photo-stack[open] .photo-stack-cards,
+  .photo-stack[open] .photo-globe-wrap {
     animation: none;
+  }
+
+  .photo-globe-pulse {
+    display: none;
   }
 }
 
