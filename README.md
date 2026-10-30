@@ -22,6 +22,7 @@
 ├── index.html                 # ページ本体（ヒーローの水面エフェクトの JS もここ）
 ├── 404.html                   # 存在しない URL を開いたときのページ
 ├── css/stylesheet.css         # スタイル
+├── js/photo-globe.js          # 写真に連動する地球儀（formatGeo を受け取るファクトリ）
 ├── fonts/                     # Web フォント（Inter, JetBrains Mono のラテン文字部分を自前で配信）
 ├── images/                    # アイコン・作品画像・世界地図
 ├── scripts/build_world_map.py # 世界地図 (images/world-map.svg) と写真の地球儀の国の形 (images/globe.json) の生成スクリプト
