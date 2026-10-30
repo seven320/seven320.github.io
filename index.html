@@ -601,7 +601,10 @@
         var script = document.createElement('script');
         script.src = src;
         script.onload = resolve;
-        script.onerror = reject;
+        script.onerror = function() {
+          script.remove();
+          reject(new Error('地図ライブラリの読み込みに失敗: ' + src));
+        };
         document.head.appendChild(script);
       });
     }
@@ -610,12 +613,18 @@
       if (ready) return ready;
       // d3-geo は d3-array を使うので順番に読む
       ready = LIBS.reduce(function(chain, src) {
-        return chain.then(function() { return loadScript(src); });
+        return chain.then(function() {
+          // 成功済みのライブラリは再読み込みしない。
+          var loaded = [window.d3 && window.d3.extent, window.d3 && window.d3.geoPath, window.topojson && window.topojson.feature];
+          if (!loaded[LIBS.indexOf(src)]) return loadScript(src);
+        });
       }, Promise.resolve()).then(function() {
         return fetch('images/globe.json');
       }).then(function(res) {
         return res.ok ? res.json() : Promise.reject(res.status);
       }).then(function(topo) {
+        islands = [];
+        centers = {};
         countries = topojson.feature(topo, topo.objects.countries).features;
         countries.forEach(function(f) {
           if (f.properties.visited) centers[f.properties.name] = d3.geoCentroid(f);
@@ -628,7 +637,12 @@
         borders = topojson.mesh(topo, topo.objects.countries, function(a, b) { return a !== b; });
         wrap.hidden = false;
       });
-      ready.catch(function() { wrap.hidden = true; });
+      // 失敗したPromiseを保持せず、次に写真を開いたときに再試行する。
+      ready = ready.catch(function(error) {
+        ready = null;
+        wrap.hidden = true;
+        throw error;
+      });
       return ready;
     }
 
