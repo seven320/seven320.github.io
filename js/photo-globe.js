@@ -24,6 +24,8 @@ function createPhotoGlobe(formatGeo) {
   var turn = null;   // { from, to, start }
   var pin = null;    // { lonLat, exact }
   var frame = 0;
+  var active = false;
+  var revision = 0;
   var ctx = canvas.getContext('2d');
   if (!ctx) return null;
   var sphere = { type: 'Sphere' };
@@ -33,7 +35,10 @@ function createPhotoGlobe(formatGeo) {
       var script = document.createElement('script');
       script.src = src;
       script.onload = resolve;
-      script.onerror = reject;
+      script.onerror = function() {
+        script.remove();
+        reject(new Error('地図ライブラリの読み込みに失敗: ' + src));
+      };
       document.head.appendChild(script);
     });
   }
@@ -42,12 +47,18 @@ function createPhotoGlobe(formatGeo) {
     if (ready) return ready;
     // d3-geo は d3-array を使うので順番に読む
     ready = LIBS.reduce(function(chain, src) {
-      return chain.then(function() { return loadScript(src); });
+      return chain.then(function() {
+        // 成功済みのライブラリは再読み込みしない。
+        var loaded = [window.d3 && window.d3.extent, window.d3 && window.d3.geoPath, window.topojson && window.topojson.feature];
+        if (!loaded[LIBS.indexOf(src)]) return loadScript(src);
+      });
     }, Promise.resolve()).then(function() {
       return fetch('images/globe.json');
     }).then(function(res) {
       return res.ok ? res.json() : Promise.reject(res.status);
     }).then(function(topo) {
+      islands = [];
+      centers = {};
       countries = topojson.feature(topo, topo.objects.countries).features;
       countries.forEach(function(f) {
         if (f.properties.visited) centers[f.properties.name] = d3.geoCentroid(f);
@@ -58,9 +69,13 @@ function createPhotoGlobe(formatGeo) {
       });
       graticule = d3.geoGraticule().step([30, 30])();
       borders = topojson.mesh(topo, topo.objects.countries, function(a, b) { return a !== b; });
-      wrap.hidden = false;
     });
-    ready.catch(function() { wrap.hidden = true; });
+    // 失敗したPromiseを保持せず、次に写真を開いたときに再試行する。
+    ready = ready.catch(function(error) {
+      ready = null;
+      wrap.hidden = true;
+      throw error;
+    });
     return ready;
   }
 
@@ -180,7 +195,12 @@ function createPhotoGlobe(formatGeo) {
 
   // 写真の場所まで回す
   function show(photo) {
+    active = true;
+    var request = ++revision;
     load().then(function() {
+      // 閉じた後や、次の写真へ移った後の読み込み結果は使わない。
+      if (!active || request !== revision) return;
+      wrap.hidden = false;
       var lonLat = photo.geo ? [photo.geo[1], photo.geo[0]] : centers[photo.country];
       if (!lonLat) return;
       pin = { lonLat: lonLat, exact: !!photo.geo };
@@ -194,10 +214,20 @@ function createPhotoGlobe(formatGeo) {
     }, function() {});
   }
 
+  function stop() {
+    active = false;
+    revision++;
+    cancelAnimationFrame(frame);
+    frame = 0;
+    turn = null;
+    pulse.hidden = true;
+    wrap.hidden = true;
+  }
+
   // 画面サイズが変わったらピンと波紋の位置も更新する。
   window.addEventListener('resize', function() {
-    if (graticule && !wrap.hidden && !frame) frame = requestAnimationFrame(loop);
+    if (active && graticule && !wrap.hidden && !frame) frame = requestAnimationFrame(loop);
   });
-  return { show: show };
+  return { show: show, stop: stop };
 }
 

@@ -649,6 +649,7 @@
     // 縮みながら消えてから閉じる
     function close() {
       if (!dialog.open || dialog.classList.contains('closing')) return;
+      if (photoGlobe) photoGlobe.stop();
       dialog.classList.add('closing');
       closing = setTimeout(function() {
         dialog.classList.remove('closing');
@@ -696,6 +697,10 @@
     dialog.addEventListener('cancel', function(e) {
       e.preventDefault();
       close();
+    });
+    // dialog.close() が直接呼ばれた場合も停止する。
+    dialog.addEventListener('close', function() {
+      if (photoGlobe) photoGlobe.stop();
     });
     closeButton.addEventListener('click', close);
     // 写真の外を押したら閉じる
