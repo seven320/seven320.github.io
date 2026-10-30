@@ -592,6 +592,9 @@
     var turn = null;   // { from, to, start }
     var pin = null;    // { lonLat, exact }
     var frame = 0;
+    var ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    var sphere = { type: 'Sphere' };
 
     function loadScript(src) {
       return new Promise(function(resolve, reject) {
@@ -633,6 +636,36 @@
       return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
     }
 
+    function updateRotation(now) {
+      if (!turn) return;
+      // 回し始めの時刻は、最初に描くときのコマの時刻にそろえる
+      if (turn.start === null) turn.start = now;
+      var t = reduceMotion ? 1 : Math.min(1, (now - turn.start) / TURN);
+      var k = ease(t);
+      rotation = [turn.from[0] + (turn.to[0] - turn.from[0]) * k, turn.from[1] + (turn.to[1] - turn.from[1]) * k];
+      if (t === 1) turn = null;
+    }
+
+    // 塗りと線を描く共通処理。色と太さは呼び出し側で指定する。
+    function paint(path, geometry, fill, stroke, width) {
+      ctx.beginPath();
+      path(geometry);
+      if (fill) {
+        ctx.fillStyle = fill;
+        ctx.fill();
+      }
+      if (stroke) {
+        ctx.strokeStyle = stroke;
+        ctx.lineWidth = width;
+        ctx.stroke();
+      }
+    }
+
+    function gradientColors(gradient, stops) {
+      stops.forEach(function(stop) { gradient.addColorStop(stop[0], stop[1]); });
+      return gradient;
+    }
+
     // 地球儀とピンを描く。回っている間だけ呼ばれ、止まったら何も描かない
     function draw(now) {
       var size = canvas.clientWidth;
@@ -640,45 +673,23 @@
       var dpr = Math.min(window.devicePixelRatio || 1, 2);
       var px = Math.round(size * dpr);
       if (canvas.width !== px || canvas.height !== px) canvas.width = canvas.height = px;
-      if (turn) {
-        // 回し始めの時刻は、最初に描くときのコマの時刻にそろえる
-        if (turn.start === null) turn.start = now;
-        var t = reduceMotion ? 1 : Math.min(1, (now - turn.start) / TURN);
-        var k = ease(t);
-        rotation = [turn.from[0] + (turn.to[0] - turn.from[0]) * k, turn.from[1] + (turn.to[1] - turn.from[1]) * k];
-        if (t === 1) turn = null;
-      }
+      updateRotation(now);
       var radius = size * 0.46;
       var projection = d3.geoOrthographic().scale(radius).translate([size / 2, size / 2]).rotate(rotation);
       var front = [-rotation[0], -rotation[1]];
-      var ctx = canvas.getContext('2d');
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, size, size);
       var path = d3.geoPath(projection, ctx);
-      ctx.beginPath();
-      path({ type: 'Sphere' });
-      var ocean = ctx.createRadialGradient(size * 0.32, size * 0.27, 0, size / 2, size / 2, radius);
-      ocean.addColorStop(0, '#1b3548');
-      ocean.addColorStop(0.65, '#102332');
-      ocean.addColorStop(1, '#0a1421');
-      ctx.fillStyle = ocean;
-      ctx.fill();
-      ctx.beginPath();
-      path(graticule);
-      ctx.strokeStyle = 'rgba(164, 203, 214, 0.12)';
-      ctx.lineWidth = 0.5;
-      ctx.stroke();
+      var ocean = gradientColors(
+        ctx.createRadialGradient(size * 0.32, size * 0.27, 0, size / 2, size / 2, radius),
+        [[0, '#1b3548'], [0.65, '#102332'], [1, '#0a1421']]
+      );
+      paint(path, sphere, ocean);
+      paint(path, graticule, null, 'rgba(164, 203, 214, 0.12)', 0.5);
       countries.forEach(function(f) {
-        ctx.beginPath();
-        path(f);
-        ctx.fillStyle = f.properties.visited ? '#4bbba5' : '#344c5c';
-        ctx.fill();
+        paint(path, f, f.properties.visited ? '#4bbba5' : '#344c5c');
       });
-      ctx.beginPath();
-      path(borders);
-      ctx.strokeStyle = 'rgba(9, 25, 34, 0.42)';
-      ctx.lineWidth = 0.6;
-      ctx.stroke();
+      paint(path, borders, null, 'rgba(9, 25, 34, 0.42)', 0.6);
       ctx.fillStyle = '#4bbba5';
       islands.forEach(function(p) {
         if (d3.geoDistance(p, front) > Math.PI / 2) return;
@@ -687,30 +698,27 @@
         ctx.arc(xy[0], xy[1], 2, 0, Math.PI * 2);
         ctx.fill();
       });
-      // Static light direction makes the moving geography read as a solid sphere.
+      // 光と縁のハイライトを球面の内側だけに重ねる。
       ctx.save();
       ctx.beginPath();
-      path({ type: 'Sphere' });
+      path(sphere);
       ctx.clip();
-      var shade = ctx.createLinearGradient(size * 0.16, size * 0.12, size * 0.87, size * 0.86);
-      shade.addColorStop(0, 'rgba(189, 232, 239, 0.16)');
-      shade.addColorStop(0.42, 'rgba(8, 18, 30, 0)');
-      shade.addColorStop(1, 'rgba(2, 8, 18, 0.72)');
-      ctx.fillStyle = shade;
-      ctx.fillRect(0, 0, size, size);
-      var limb = ctx.createRadialGradient(size / 2, size / 2, radius * 0.72, size / 2, size / 2, radius);
-      limb.addColorStop(0, 'rgba(124, 207, 220, 0)');
-      limb.addColorStop(0.92, 'rgba(124, 207, 220, 0.04)');
-      limb.addColorStop(1, 'rgba(124, 207, 220, 0.24)');
-      ctx.fillStyle = limb;
-      ctx.fillRect(0, 0, size, size);
+      var shade = gradientColors(
+        ctx.createLinearGradient(size * 0.16, size * 0.12, size * 0.87, size * 0.86),
+        [[0, 'rgba(189, 232, 239, 0.16)'], [0.42, 'rgba(8, 18, 30, 0)'], [1, 'rgba(2, 8, 18, 0.72)']]
+      );
+      var limb = gradientColors(
+        ctx.createRadialGradient(size / 2, size / 2, radius * 0.72, size / 2, size / 2, radius),
+        [[0, 'rgba(124, 207, 220, 0)'], [0.92, 'rgba(124, 207, 220, 0.04)'], [1, 'rgba(124, 207, 220, 0.24)']]
+      );
+      paint(path, sphere, shade);
+      paint(path, sphere, limb);
       ctx.restore();
-      ctx.beginPath();
-      path({ type: 'Sphere' });
-      ctx.strokeStyle = 'rgba(167, 221, 229, 0.4)';
-      ctx.lineWidth = 1;
-      ctx.stroke();
+      paint(path, sphere, null, 'rgba(167, 221, 229, 0.4)', 1);
+      drawPin(projection, front);
+    }
 
+    function drawPin(projection, front) {
       // ピン: 撮影場所が分かる写真は塗った針、分からない写真は国の真ん中に輪だけ
       var visible = pin && d3.geoDistance(pin.lonLat, front) < Math.PI / 2;
       // 波紋は CSS のアニメーションで、止まっている間は canvas を描き直さない
@@ -727,14 +735,9 @@
       ctx.stroke();
       ctx.beginPath();
       ctx.arc(p[0], p[1] - 16, 4, 0, Math.PI * 2);
-      if (pin.exact) {
-        ctx.fillStyle = '#ffb454';
-        ctx.fill();
-      } else {
-        ctx.fillStyle = '#0f1522';
-        ctx.fill();
-        ctx.stroke();
-      }
+      ctx.fillStyle = pin.exact ? '#ffb454' : '#0f1522';
+      ctx.fill();
+      if (!pin.exact) ctx.stroke();
     }
 
     function loop(now) {
@@ -759,7 +762,7 @@
       }, function() {});
     }
 
-    // Reproject the pin and its CSS pulse when the viewport crosses a breakpoint.
+    // 画面サイズが変わったらピンと波紋の位置も更新する。
     window.addEventListener('resize', function() {
       if (graticule && !wrap.hidden && !frame) frame = requestAnimationFrame(loop);
     });
