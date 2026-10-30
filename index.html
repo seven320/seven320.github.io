@@ -592,6 +592,8 @@
     var turn = null;   // { from, to, start }
     var pin = null;    // { lonLat, exact }
     var frame = 0;
+    var active = false;
+    var revision = 0;
     var ctx = canvas.getContext('2d');
     if (!ctx) return null;
     var sphere = { type: 'Sphere' };
@@ -626,7 +628,6 @@
         });
         graticule = d3.geoGraticule().step([30, 30])();
         borders = topojson.mesh(topo, topo.objects.countries, function(a, b) { return a !== b; });
-        wrap.hidden = false;
       });
       ready.catch(function() { wrap.hidden = true; });
       return ready;
@@ -748,7 +749,12 @@
 
     // 写真の場所まで回す
     function show(photo) {
+      active = true;
+      var request = ++revision;
       load().then(function() {
+        // 閉じた後や、次の写真へ移った後の読み込み結果は使わない。
+        if (!active || request !== revision) return;
+        wrap.hidden = false;
         var lonLat = photo.geo ? [photo.geo[1], photo.geo[0]] : centers[photo.country];
         if (!lonLat) return;
         pin = { lonLat: lonLat, exact: !!photo.geo };
@@ -762,11 +768,21 @@
       }, function() {});
     }
 
+    function stop() {
+      active = false;
+      revision++;
+      cancelAnimationFrame(frame);
+      frame = 0;
+      turn = null;
+      pulse.hidden = true;
+      wrap.hidden = true;
+    }
+
     // 画面サイズが変わったらピンと波紋の位置も更新する。
     window.addEventListener('resize', function() {
-      if (graticule && !wrap.hidden && !frame) frame = requestAnimationFrame(loop);
+      if (active && graticule && !wrap.hidden && !frame) frame = requestAnimationFrame(loop);
     });
-    return { show: show };
+    return { show: show, stop: stop };
   })();
 
   // いちばん上の写真をドラッグして遠くまで動かすか押すと、束のいちばん下に回る。近くで離すと戻る
@@ -849,6 +865,7 @@
     // 縮みながら消えてから閉じる
     function close() {
       if (!dialog.open || dialog.classList.contains('closing')) return;
+      if (photoGlobe) photoGlobe.stop();
       dialog.classList.add('closing');
       closing = setTimeout(function() {
         dialog.classList.remove('closing');
@@ -896,6 +913,10 @@
     dialog.addEventListener('cancel', function(e) {
       e.preventDefault();
       close();
+    });
+    // dialog.close() が直接呼ばれた場合も停止する。
+    dialog.addEventListener('close', function() {
+      if (photoGlobe) photoGlobe.stop();
     });
     closeButton.addEventListener('click', close);
     // 写真の外を押したら閉じる
