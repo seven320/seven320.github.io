@@ -231,8 +231,12 @@ def build_globe(topo_path):
     # 0.01°刻みの整数にそろえる(TopoJSON の quantize と同じ形で小さくなる)
     step = 0.01
     snapped = []
+    index_near_pole = []
     for arc in arcs:
-        points = [(round((lon + 180) / step), round((lat + 90) / step)) for lon, lat in simplify(arc, GLOBE_TOLERANCE)]
+        # 南極の南の縁のように極を回る線は、平らに見ると一直線でも間引くと極を回らなくなるのでそのまま使う
+        near_pole = any(abs(lat) > 85 for _, lat in arc)
+        index_near_pole.append(near_pole)
+        points = [(round((lon + 180) / step), round((lat + 90) / step)) for lon, lat in (arc if near_pole else simplify(arc, GLOBE_TOLERANCE))]
         snapped.append(points[:1] + [q for p, q in zip(points, points[1:]) if q != p])
 
     def signed_area(ring, source):
@@ -245,6 +249,9 @@ def build_globe(topo_path):
     # 間引いて潰れた輪(面積0)や向きが裏返った輪は、d3 が「輪の外側=地球全体」と取り違えて
     # 回している途中にちらつくので捨てる
     def keep(ring):
+        # 南極のように極を回る輪は、緯度経度のまま面積を測るとほぼ0になって向きが分からないので残す
+        if any(index_near_pole[i if i >= 0 else ~i] for i in ring):
+            return True
         area = signed_area(ring, snapped)
         return area != 0 and (area > 0) == (signed_area(ring, arcs) > 0)
 
