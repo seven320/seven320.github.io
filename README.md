@@ -23,6 +23,9 @@
 ├── 404.html                   # 存在しない URL を開いたときのページ
 ├── css/stylesheet.css         # スタイル
 ├── js/photo-globe.js          # 写真に連動する地球儀（formatGeo を受け取るファクトリ）
+├── js/globe-terrain.js        # 地形テクスチャの球面への投影（WebGL）
+├── js/travel-photos.js        # 写真・場所・日付・表示方法の一覧
+├── js/travel.js               # 写真の切り替えと世界地図の操作
 ├── fonts/                     # Web フォント（Inter, JetBrains Mono のラテン文字部分を自前で配信）
 ├── images/                    # アイコン・作品画像・世界地図
 ├── scripts/build_world_map.py # 世界地図 (images/world-map.svg) と写真の地球儀の国の形 (images/globe.json) の生成スクリプト
@@ -69,13 +72,24 @@ uv run scripts/build_world_map.py /tmp/countries-110m.json /tmp/countries-50m.js
 
 ## 旅行の写真を足す
 
-世界地図で行った国を押すと、その国の写真を重ねたカードの束で見せています。写真は `images/travel/` に置き、`index.html` の `TRAVEL_PHOTOS` に1行足します。書いた順番が、写真の束の上からの順番になります。
+世界地図で行った国を押すと、その国の写真を重ねたカードの束で見せています。写真は `images/travel/` に置き、`js/travel-photos.js` の `TRAVEL_PHOTOS` に1行足します。書いた順番が、写真の束の上からの順番になります。
+
+写真はクリック・スワイプ・左右キーに加え、画面下の矢印ボタンでも切り替えられます。写真番号とバーで、表示中の写真の位置を確認できます。
+
+写真の横の地球儀は「＋／−」、ホイール、2本指のピンチで1〜6倍に拡大・縮小できます。倍率表示を押すと1倍に戻ります。写真をめくっても倍率は維持し、次の撮影場所を中心に表示します。
+
+地球儀は訪問した国を青緑、その他の国を青灰色で表示し、標高が高いほど元の色を濃くします。撮影場所はオレンジのピンで示します。標高画像は写真を初めて開いたときに読み込み、WebGL が使えない場合や画像を読み込めない場合も通常の国別表示を続けます。
+
+`images/globe-height.webp` は [NASA Blue Marble の標高画像](https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/topography-bathymetry-maps/)（GEBCO、0〜6400mをグレースケールで表現）の 5400×2700 版を `cwebp -resize 4096 2048 -q 90 -m 6` で縮小・変換したものです。色の濃淡は地形の目安として使います。
 
 ```js
 { country: 'Peru', src: 'images/travel/peru-1.webp', caption: 'マチュピチュの朝' },
 ```
 
 - 国名は `scripts/build_world_map.py` の `VISITED` と同じ英語名にします
+- 地域名を表示したい場合は `place`（例: `'Hawaii'`）を指定します。世界地図との対応には `country` を使います
+- `fit: 'contain'` を指定すると、写真を切り抜かず全体を表示します（未指定なら枠いっぱいに表示）
+- `geo: [緯度, 経度]` で地球儀の位置を指定できます。手動で補った代表座標には `geoApproximate: true` を付けると「付近」と表示します
 - 置く前に、写真の向きを直してから撮影場所の GPS などの EXIF を消します（スマホの写真には位置情報が入っていることが多いです）
 - 長い辺を 1200px くらいに縮めて、WebP か JPEG にします。iPhone の HEIC は Safari 以外で表示できないので変換します
 - ファイル名は `peru-1.webp` のように英小文字にします
@@ -85,6 +99,7 @@ uv run scripts/build_world_map.py /tmp/countries-110m.json /tmp/countries-50m.js
 - アイコン: [Font Awesome Free 5.5.0](https://fontawesome.com/license/free) (CC BY 4.0)
 - フォント: [Inter](https://github.com/rsms/inter), [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) (SIL Open Font License 1.1)
 - 地図データ: [world-atlas](https://github.com/topojson/world-atlas)（[Natural Earth](https://www.naturalearthdata.com/) を元にしたもの）
+- 標高画像: [NASA Earth Observatory / Jesse Allen, GEBCO (British Oceanographic Data Centre)](https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/topography-bathymetry-maps/)
 
 ## Author
 

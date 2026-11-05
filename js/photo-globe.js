@@ -6,6 +6,9 @@ function createPhotoGlobe(formatGeo) {
   var label = document.querySelector('.photo-globe-label');
   var countryLabel = document.querySelector('.photo-globe-country');
   var pulse = document.querySelector('.photo-globe-pulse');
+  var zoomIn = document.querySelector('.photo-globe-zoom-in');
+  var zoomOut = document.querySelector('.photo-globe-zoom-out');
+  var zoomReset = document.querySelector('.photo-globe-zoom-reset');
   if (!wrap || !canvas || !pulse || !canvas.getContext || !window.fetch) return null;
   var LIBS = [
     'https://cdn.jsdelivr.net/npm/d3-array@3.2.4/dist/d3-array.min.js',
@@ -13,9 +16,15 @@ function createPhotoGlobe(formatGeo) {
     'https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js'
   ];
   var TURN = 900;  // 次の場所まで回る時間(ms)
+  var MIN_ZOOM = 1;
+  var MAX_ZOOM = 6;
+  var zoom = 1;
+  var touches = new Map();
+  var pinch = null;
   var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var ready = null;
   var countries = [];
+  var currentCountry = null;
   var islands = [];
   var centers = {};
   var graticule = null;
@@ -29,6 +38,58 @@ function createPhotoGlobe(formatGeo) {
   var ctx = canvas.getContext('2d');
   if (!ctx) return null;
   var sphere = { type: 'Sphere' };
+  var terrain = typeof createGlobeTerrain === 'function' ? createGlobeTerrain(requestDraw) : null;
+
+  function requestDraw() {
+    if (active && graticule && !wrap.hidden && !frame) frame = requestAnimationFrame(loop);
+  }
+
+  function setZoom(value) {
+    zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, value));
+    if (zoomIn) zoomIn.disabled = zoom >= MAX_ZOOM;
+    if (zoomOut) zoomOut.disabled = zoom <= MIN_ZOOM;
+    if (zoomReset) {
+      zoomReset.textContent = zoom.toFixed(1) + '×';
+      zoomReset.setAttribute('aria-label', '現在' + zoom.toFixed(1) + '倍。1倍に戻す');
+    }
+    requestDraw();
+  }
+
+  if (zoomIn) zoomIn.addEventListener('click', function() { setZoom(zoom * 1.5); });
+  if (zoomOut) zoomOut.addEventListener('click', function() { setZoom(zoom / 1.5); });
+  if (zoomReset) zoomReset.addEventListener('click', function() { setZoom(1); });
+
+  canvas.addEventListener('wheel', function(e) {
+    if (!active || !graticule) return;
+    e.preventDefault();
+    var unit = e.deltaMode === 1 ? 16 : e.deltaMode === 2 ? canvas.clientHeight : 1;
+    var delta = Math.max(-120, Math.min(120, e.deltaY * unit));
+    setZoom(zoom * Math.exp(-delta * 0.003));
+  }, { passive: false });
+
+  function touchDistance() {
+    var points = Array.from(touches.values());
+    return Math.hypot(points[0][0] - points[1][0], points[0][1] - points[1][1]);
+  }
+
+  canvas.addEventListener('pointerdown', function(e) {
+    if (e.pointerType !== 'touch' || !active || !graticule) return;
+    touches.set(e.pointerId, [e.clientX, e.clientY]);
+    canvas.setPointerCapture(e.pointerId);
+    pinch = touches.size === 2 ? { distance: touchDistance(), zoom: zoom } : null;
+  });
+  canvas.addEventListener('pointermove', function(e) {
+    if (!touches.has(e.pointerId)) return;
+    touches.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pinch && pinch.distance > 0) setZoom(pinch.zoom * touchDistance() / pinch.distance);
+  });
+  function endTouch(e) {
+    touches.delete(e.pointerId);
+    pinch = touches.size === 2 ? { distance: touchDistance(), zoom: zoom } : null;
+  }
+  canvas.addEventListener('pointerup', endTouch);
+  canvas.addEventListener('pointercancel', endTouch);
+  canvas.addEventListener('lostpointercapture', endTouch);
 
   function loadScript(src) {
     return new Promise(function(resolve, reject) {
@@ -113,7 +174,7 @@ function createPhotoGlobe(formatGeo) {
     return gradient;
   }
 
-  // 地球儀とピンを描く。回っている間だけ呼ばれ、止まったら何も描かない
+  // 地球儀とピンを描く。回転中とズーム・サイズ変更時だけ描き直す
   function draw(now) {
     var size = canvas.clientWidth;
     if (!size) return;
@@ -122,22 +183,48 @@ function createPhotoGlobe(formatGeo) {
     if (canvas.width !== px || canvas.height !== px) canvas.width = canvas.height = px;
     updateRotation(now);
     var radius = size * 0.46;
-    var projection = d3.geoOrthographic().scale(radius).translate([size / 2, size / 2]).rotate(rotation);
+    var projection = d3.geoOrthographic().scale(radius * zoom).translate([size / 2, size / 2]).rotate(rotation);
     var front = [-rotation[0], -rotation[1]];
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, size, size);
+    // 表示枠は固定し、撮影場所を中心に地図だけを拡大する。
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(size / 2, size / 2, radius, 0, Math.PI * 2);
+    ctx.clip();
     var path = d3.geoPath(projection, ctx);
     var ocean = gradientColors(
       ctx.createRadialGradient(size * 0.32, size * 0.27, 0, size / 2, size / 2, radius),
-      [[0, '#1b3548'], [0.65, '#102332'], [1, '#0a1421']]
+      [[0, '#193749'], [0.65, '#0c202e'], [1, '#080f1b']]
     );
     paint(path, sphere, ocean);
-    paint(path, graticule, null, 'rgba(164, 203, 214, 0.12)', 0.5);
+    paint(path, graticule, null, 'rgba(164, 203, 214, 0.14)', 0.5);
+    var visitedLand = gradientColors(
+      ctx.createLinearGradient(0, 0, size, size),
+      [[0, '#8dcfbb'], [0.5, '#49a994'], [1, '#24545b']]
+    );
     countries.forEach(function(f) {
-      paint(path, f, f.properties.visited ? '#4bbba5' : '#344c5c');
+      paint(path, f, f.properties.visited ? visitedLand : '#2b4352');
     });
-    paint(path, borders, null, 'rgba(9, 25, 34, 0.42)', 0.6);
-    ctx.fillStyle = '#4bbba5';
+    var relief = terrain && terrain.draw(px, rotation, zoom);
+    if (relief) {
+      // 元の国の色を保ち、標高に応じた濃淡だけを陸地に重ねる。
+      ctx.save();
+      ctx.beginPath();
+      countries.forEach(function(f) { path(f); });
+      ctx.clip();
+      ctx.globalCompositeOperation = 'multiply';
+      ctx.drawImage(relief, 0, 0, size, size);
+      ctx.restore();
+    }
+    paint(path, borders, null, 'rgba(8, 25, 30, 0.48)', 0.6);
+    // 写真を見ている国の輪郭を、淡い線で浮かび上がらせる。
+    countries.forEach(function(f) {
+      if (f.properties.name === currentCountry && f.properties.visited) {
+        paint(path, f, null, 'rgba(203, 255, 233, 0.7)', 1);
+      }
+    });
+    ctx.fillStyle = '#69bba5';
     islands.forEach(function(p) {
       if (d3.geoDistance(p, front) > Math.PI / 2) return;
       var xy = projection(p);
@@ -145,33 +232,24 @@ function createPhotoGlobe(formatGeo) {
       ctx.arc(xy[0], xy[1], 2, 0, Math.PI * 2);
       ctx.fill();
     });
-    // 光と縁のハイライトを球面の内側だけに重ねる。
-    ctx.save();
-    ctx.beginPath();
-    path(sphere);
-    ctx.clip();
+    // 控えめな陰影だけで球面の丸みを出す。
     var shade = gradientColors(
       ctx.createLinearGradient(size * 0.16, size * 0.12, size * 0.87, size * 0.86),
       [[0, 'rgba(189, 232, 239, 0.16)'], [0.42, 'rgba(8, 18, 30, 0)'], [1, 'rgba(2, 8, 18, 0.72)']]
     );
-    var limb = gradientColors(
-      ctx.createRadialGradient(size / 2, size / 2, radius * 0.72, size / 2, size / 2, radius),
-      [[0, 'rgba(124, 207, 220, 0)'], [0.92, 'rgba(124, 207, 220, 0.04)'], [1, 'rgba(124, 207, 220, 0.24)']]
-    );
     paint(path, sphere, shade);
-    paint(path, sphere, limb);
+    drawPin(projection, front, size, radius);
     ctx.restore();
-    paint(path, sphere, null, 'rgba(167, 221, 229, 0.4)', 1);
-    drawPin(projection, front);
   }
 
-  function drawPin(projection, front) {
+  function drawPin(projection, front, size, radius) {
     // ピン: 撮影場所が分かる写真は塗った針、分からない写真は国の真ん中に輪だけ
-    var visible = pin && d3.geoDistance(pin.lonLat, front) < Math.PI / 2;
+    var p = pin && projection(pin.lonLat);
+    var visible = pin && d3.geoDistance(pin.lonLat, front) < Math.PI / 2 &&
+      Math.hypot(p[0] - size / 2, p[1] - size / 2) < radius;
     // 波紋は CSS のアニメーションで、止まっている間は canvas を描き直さない
     pulse.hidden = !visible || !!turn;
     if (!visible) return;
-    var p = projection(pin.lonLat);
     pulse.style.left = canvas.offsetLeft + p[0] + 'px';
     pulse.style.top = canvas.offsetTop + p[1] + 'px';
     ctx.beginPath();
@@ -196,6 +274,7 @@ function createPhotoGlobe(formatGeo) {
   // 写真の場所まで回す
   function show(photo) {
     active = true;
+    if (terrain) terrain.load();
     var request = ++revision;
     load().then(function() {
       // 閉じた後や、次の写真へ移った後の読み込み結果は使わない。
@@ -203,11 +282,13 @@ function createPhotoGlobe(formatGeo) {
       wrap.hidden = false;
       var lonLat = photo.geo ? [photo.geo[1], photo.geo[0]] : centers[photo.country];
       if (!lonLat) return;
-      pin = { lonLat: lonLat, exact: !!photo.geo };
-      countryLabel.textContent = photo.country;
-      label.textContent = photo.geo ? formatGeo(photo.geo) : 'おおよその位置';
+      pin = { lonLat: lonLat, exact: !!photo.geo && !photo.geoApproximate };
+      currentCountry = photo.country;
+      countryLabel.textContent = photo.place || photo.country;
+      label.textContent = photo.geo ? formatGeo(photo.geo, photo.geoApproximate) : 'おおよその位置';
       // 遠回りしないように、経度は差が180°以内になる方へ回す
-      var to = [-lonLat[0], Math.max(-60, Math.min(60, -lonLat[1]))];
+      // 南極など高緯度の場所も、拡大したときにピンが中央に残るよう真ん中に向ける。
+      var to = [-lonLat[0], -lonLat[1]];
       to[0] = rotation[0] + ((to[0] - rotation[0]) % 360 + 540) % 360 - 180;
       turn = { from: rotation.slice(), to: to, start: null };
       if (!frame) frame = requestAnimationFrame(loop);
@@ -220,14 +301,14 @@ function createPhotoGlobe(formatGeo) {
     cancelAnimationFrame(frame);
     frame = 0;
     turn = null;
+    touches.clear();
+    pinch = null;
     pulse.hidden = true;
     wrap.hidden = true;
   }
 
   // 画面サイズが変わったらピンと波紋の位置も更新する。
-  window.addEventListener('resize', function() {
-    if (active && graticule && !wrap.hidden && !frame) frame = requestAnimationFrame(loop);
-  });
+  window.addEventListener('resize', requestDraw);
   return { show: show, stop: stop };
 }
 
