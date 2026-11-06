@@ -1,6 +1,6 @@
 // 旅行の写真。国名は world-atlas の英語名(scripts/build_world_map.py の VISITED と同じ)。写真は images/travel/ に置く
 // alt は見える内容の説明、caption は画面に出す一言。
-// 表示は国名の A→Z。同じ国の写真は登録順を保つ。
+// 表示は日本(東京)から西へ回る順(経度順)。同じ場所の写真は登録順を保つ。geo のない写真は最後。
 var TRAVEL_PHOTOS = [
   // チュクンリ山は本人の場所指定から補った代表座標: https://www.sherpana.com/locations/chukhung-ri
   { country: 'Nepal', src: 'images/travel/nepal-1.webp', alt: 'チュクンリ山から望む雪山の連なり。谷を白い雲が覆い、手前には岩の斜面が広がる。', caption: 'チュクンリ山', geo: [27.9256, 86.8790], geoApproximate: true },
@@ -26,6 +26,10 @@ var TRAVEL_PHOTOS = [
   { country: 'Peru', src: 'images/travel/peru-2.webp', alt: '岩の散らばる草地で休む3匹の犬。手前には登山用の荷物と水のボトルが置かれている。', caption: '山で出会った犬たち', geo: [-8.9392, -77.6833], geoApproximate: true, date: '2017-02-24' }
 ];
 
+// 東京から西へ何度離れているか(0〜360)。めくるたびに地球儀が同じ向きに回るようにする。
+function westOfJapan(photo) {
+  return photo.geo ? ((139.69 - photo.geo[1]) % 360 + 360) % 360 : Infinity;
+}
 TRAVEL_PHOTOS.sort(function(a, b) {
-  return a.country.localeCompare(b.country, 'en');
+  return westOfJapan(a) - westOfJapan(b);
 });

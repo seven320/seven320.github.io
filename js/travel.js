@@ -121,7 +121,7 @@
 
     function open(country, trigger) {
       opener = trigger || document.activeElement;
-      // 選んだ国から始め、その後も国名順にたどる。
+      // 選んだ国から始め、その後も同じ順(日本から西回り)にたどる。
       var start = Math.max(0, cards.findIndex(function(c) { return c.photo.country === country; }));
       deck = cards.slice(start).concat(cards.slice(0, start));
       current = 0;
