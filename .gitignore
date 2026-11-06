@@ -2,3 +2,8 @@ __pycache__/
 # 旅行の写真を縮めるスクリプトは手元だけで使う
 scripts/add_travel_photo.py
 .DS_Store
+
+# 変換前の旅行写真(サイトは webp だけを使う)
+images/travel/*.jpg
+images/travel/*.jpeg
+images/travel/*.JPG

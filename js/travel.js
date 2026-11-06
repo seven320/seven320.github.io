@@ -7,7 +7,8 @@
     return lat + ' ' + lon + (approximate ? '（付近）' : '');
   }
 
-  var photoGlobe = window.createPhotoGlobe ? createPhotoGlobe(formatGeo) : null;
+  var pickPhoto = null;  // 地球儀の点が押されたら、その写真へ移る(写真の束を作った後で中身を入れる)
+  var photoGlobe = window.createPhotoGlobe ? createPhotoGlobe(formatGeo, function(photo) { if (pickPhoto) pickPhoto(photo); }) : null;
 
   // 写真をめくると閲覧済みの写真が後ろに残る。近くで離すと戻る
   var openPhotoStack = (function() {
@@ -17,6 +18,7 @@
     var main = document.querySelector('.photo-stack-main');
     var position = document.querySelector('.photo-stack-position');
     var progress = document.querySelector('.photo-stack-progress > span');
+    var announcement = document.querySelector('.photo-stack-announcement');
     var prevButton = dialog && dialog.querySelector('.photo-stack-prev');
     var nextButton = dialog && dialog.querySelector('.photo-stack-next');
     if (!dialog || !stack || !closeButton || !dialog.showModal || !TRAVEL_PHOTOS.length) return null;
@@ -27,6 +29,18 @@
     var deck = [];
     var current = 0;
     var closing = null;
+    var opener = null;
+    var announceFrame = 0;
+
+    function announce() {
+      cancelAnimationFrame(announceFrame);
+      announceFrame = requestAnimationFrame(function() {
+        if (!dialog.open) return;
+        var photo = deck[current].photo;
+        announcement.textContent = '写真 ' + (cards.indexOf(deck[current]) + 1) + ' / ' + cards.length + '、' +
+          photo.country + '、' + (photo.caption || '');
+      });
+    }
 
     function photoNumber(index) {
       return String(index).padStart(2, '0') + ' / ' + String(TRAVEL_PHOTOS.length).padStart(2, '0');
@@ -46,7 +60,7 @@
       shot.style.setProperty('--y', s[2] + 'px');
       var place = photo.place || photo.country;
       var image = card.querySelector('img');
-      image.alt = photo.caption ? photo.caption + '(' + place + ')' : place;
+      image.alt = photo.alt || (photo.caption ? photo.caption + '（' + place + '）' : place);
       if (photo.fit === 'contain') image.style.objectFit = 'contain';
       card.querySelector('.shot-index').textContent = photoNumber(i + 1);
       card.querySelector('.shot-caption').textContent = photo.caption || '';
@@ -63,6 +77,8 @@
         card.style.zIndex = i + 1;
         card.classList.toggle('top', i === current);
         card.hidden = i > current;
+        // 後ろの写真は見た目だけ残し、読み上げとフォーカスの対象から外す。
+        card.inert = i !== current;
         // 次の写真は読み込みだけ先に済ませ、めくるまでは表示しない。
         if (i <= current + 1) {
           var img = card.querySelector('img');
@@ -71,10 +87,12 @@
       });
       prevButton.disabled = current === 0;
       nextButton.disabled = deck.length < 2;
+      if (prevButton.disabled && document.activeElement === prevButton) nextButton.focus();
       var index = cards.indexOf(deck[current]) + 1;
       if (position) position.textContent = photoNumber(index);
       if (progress) progress.style.width = (index / cards.length * 100) + '%';
       if (photoGlobe) photoGlobe.show(deck[current].photo);
+      announce();
     }
 
     function next() {
@@ -90,10 +108,19 @@
       layout();
     }
 
+    // 地球儀で選んだ写真まで一度にめくる(戻る方向なら、その写真まで戻す)。
+    pickPhoto = function(photo) {
+      var index = deck.findIndex(function(card) { return card.photo === photo; });
+      if (index < 0 || index === current) return;
+      current = index;
+      layout();
+    };
+
     prevButton.addEventListener('click', prev);
     nextButton.addEventListener('click', next);
 
-    function open(country) {
+    function open(country, trigger) {
+      opener = trigger || document.activeElement;
       // 選んだ国から始め、その後も国名順にたどる。
       var start = Math.max(0, cards.findIndex(function(c) { return c.photo.country === country; }));
       deck = cards.slice(start).concat(cards.slice(0, start));
@@ -109,6 +136,8 @@
       clearTimeout(closing);
       dialog.classList.remove('closing');
       dialog.showModal();
+      dialog.scrollTop = 0;
+      announce();
     }
 
     // 縮みながら消えてから閉じる
@@ -119,7 +148,7 @@
       closing = setTimeout(function() {
         dialog.classList.remove('closing');
         dialog.close();
-      }, 250);
+      }, window.siteMotion.reduced ? 0 : 250);
     }
 
     // いちばん上の写真のドラッグ
@@ -140,7 +169,7 @@
       drag.card.style.transform = 'translate(' + drag.dx + 'px, ' + drag.dy + 'px) ' +
         'rotateX(' + (-drag.dy * TILT) + 'deg) rotateY(' + (drag.dx * TILT) + 'deg)';
     });
-    function endDrag() {
+    function endDrag(e) {
       if (!drag) return;
       var card = drag.card;
       var moved = Math.max(Math.abs(drag.dx), Math.abs(drag.dy));
@@ -149,14 +178,27 @@
       // ばねのように元の位置(めくったときは閲覧済みの束)に戻る
       card.style.transform = '';
       // 遠くまで動かしたか、ほとんど動かさずに離した(クリック)ときはめくる
-      if (moved > SENSITIVITY || moved < 4) next();
+      if (e.type !== 'pointercancel' && (moved > SENSITIVITY || moved < 4)) next();
     }
     stack.addEventListener('pointerup', endDrag);
     stack.addEventListener('pointercancel', endDrag);
 
     dialog.addEventListener('keydown', function(e) {
-      if (e.key === 'ArrowRight') next();
-      if (e.key === 'ArrowLeft') prev();
+      // Tab は閉じるボタンから倍率・前後ボタンまでを一周させる。
+      if (e.key === 'Tab') {
+        var controls = Array.from(dialog.querySelectorAll('button:not(:disabled)'))
+          .filter(function(el) { return el.getClientRects().length && !el.closest('[inert]'); });
+        var first = controls[0];
+        var last = controls[controls.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault(); last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault(); first.focus();
+        }
+      }
+      if (e.altKey || e.ctrlKey || e.metaKey) return;
+      if (e.key === 'ArrowRight') { e.preventDefault(); next(); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); prev(); }
     });
     // Esc でもアニメーションしてから閉じる
     dialog.addEventListener('cancel', function(e) {
@@ -166,6 +208,9 @@
     // dialog.close() が直接呼ばれた場合も停止する。
     dialog.addEventListener('close', function() {
       if (photoGlobe) photoGlobe.stop();
+      cancelAnimationFrame(announceFrame);
+      announcement.textContent = '';
+      if (opener && opener.isConnected && typeof opener.focus === 'function') opener.focus();
     });
     closeButton.addEventListener('click', close);
     // 写真の外を押したら閉じる
@@ -186,11 +231,22 @@
         peekImages[0].src = TRAVEL_PHOTOS[Math.max(0, last - 1)].src;
         peekImages[1].src = TRAVEL_PHOTOS[last].src;
       }, { rootMargin: '200px' }).observe(peek);
-      peek.addEventListener('click', function() { open(TRAVEL_PHOTOS[0].country); });
+      peek.addEventListener('click', function() { open(TRAVEL_PHOTOS[0].country, peek); });
     }
 
     return open;
   })();
+
+  // 訪問した国・地域の名前を読み上げ用の一覧に入れる。写真は地図の国か Photos ボタンから開く。
+  var countryList = document.querySelector('.travel-country-list');
+  if (countryList && window.TRAVEL_COUNTRIES) {
+    TRAVEL_COUNTRIES.forEach(function(country) {
+      var item = document.createElement('li');
+      item.lang = 'en';
+      item.textContent = country;
+      countryList.appendChild(item);
+    });
+  }
 
   // 世界地図の行った国を押すと、その国の写真の束を開く
   (function() {
@@ -201,8 +257,8 @@
     var hasPhoto = {};
     TRAVEL_PHOTOS.forEach(function(p) { hasPhoto[p.country] = true; });
 
-    function show(name) {
-      if (openPhotoStack && hasPhoto[name]) openPhotoStack(name);
+    function show(name, trigger) {
+      if (openPhotoStack && hasPhoto[name]) openPhotoStack(name, trigger);
     }
 
     // 選んでいる国を明るくして、国名を地図に重ねて出す
@@ -244,6 +300,7 @@
           var title = el.querySelector('title');
           el.dataset.name = title ? title.textContent : '';
           if (title) title.remove();
+          el.setAttribute('aria-label', el.dataset.name + '、訪問済み');
           if (openPhotoStack && hasPhoto[el.dataset.name]) {
             el.classList.add('has-photo');
             el.setAttribute('tabindex', '0');
@@ -255,7 +312,7 @@
           el.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' || e.key === ' ') {
               e.preventDefault();
-              show(el.dataset.name);
+              show(el.dataset.name, el);
             }
           });
         });
@@ -305,7 +362,7 @@
         svg.addEventListener('click', function(e) {
           var el = hit(e);
           activate(el);
-          if (el) show(el.dataset.name);
+          if (el) show(el.dataset.name, el);
         });
         img.replaceWith(svg);
       }).catch(function() {});
