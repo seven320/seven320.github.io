@@ -1,5 +1,5 @@
 // 旅行の写真。国名は world-atlas の英語名(scripts/build_world_map.py の VISITED と同じ)。写真は images/travel/ に置く
-// 並びは写真の束の上からの順番
+// 表示は国名の A→Z。同じ国の写真は登録順を保つ。
 var TRAVEL_PHOTOS = [
   // チュクンリ山は本人の場所指定から補った代表座標: https://www.sherpana.com/locations/chukhung-ri
   { country: 'Nepal', src: 'images/travel/nepal-1.webp', caption: 'チュクンリ山', geo: [27.9256, 86.8790], geoApproximate: true },
@@ -24,3 +24,7 @@ var TRAVEL_PHOTOS = [
   // 本人確認で谷の写真の先。移動方向・距離は不明なので、谷の座標を周辺の目安にする。
   { country: 'Peru', src: 'images/travel/peru-2.webp', caption: '山で出会った犬たち', geo: [-8.9392, -77.6833], geoApproximate: true, date: '2017-02-24' }
 ];
+
+TRAVEL_PHOTOS.sort(function(a, b) {
+  return a.country.localeCompare(b.country, 'en');
+});

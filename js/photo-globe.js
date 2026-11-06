@@ -114,9 +114,14 @@ function createPhotoGlobe(formatGeo) {
         if (!loaded[LIBS.indexOf(src)]) return loadScript(src);
       });
     }, Promise.resolve()).then(function() {
-      return fetch('images/globe.json');
-    }).then(function(res) {
-      return res.ok ? res.json() : Promise.reject(res.status);
+      // file:// ではローカル JSON を fetch できないため、同じデータの JS 版を読む。
+      if (location.protocol === 'file:') {
+        if (window.PHOTO_GLOBE_DATA) return window.PHOTO_GLOBE_DATA;
+        return loadScript('js/globe-data.js').then(function() { return window.PHOTO_GLOBE_DATA; });
+      }
+      return fetch('images/globe.json').then(function(res) {
+        return res.ok ? res.json() : Promise.reject(res.status);
+      });
     }).then(function(topo) {
       islands = [];
       centers = {};
@@ -284,7 +289,7 @@ function createPhotoGlobe(formatGeo) {
       if (!lonLat) return;
       pin = { lonLat: lonLat, exact: !!photo.geo && !photo.geoApproximate };
       currentCountry = photo.country;
-      countryLabel.textContent = photo.place || photo.country;
+      countryLabel.textContent = photo.country === 'United States of America' ? 'United States' : photo.country;
       label.textContent = photo.geo ? formatGeo(photo.geo, photo.geoApproximate) : 'おおよその位置';
       // 遠回りしないように、経度は差が180°以内になる方へ回す
       // 南極など高緯度の場所も、拡大したときにピンが中央に残るよう真ん中に向ける。
