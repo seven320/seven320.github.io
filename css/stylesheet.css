@@ -666,7 +666,7 @@ a.badge:not(.badge-master) {
   height: 100%;
   max-height: none;
   margin: 0;
-  padding: 24px max(24px, (100vw - 1240px) / 2);
+  padding: 24px max(24px, (100vw - 1440px) / 2);
   border: 0;
   background:
     radial-gradient(ellipse at 80% 44%, rgba(27, 67, 75, 0.24), transparent 48%),
@@ -756,11 +756,12 @@ a.badge:not(.badge-master) {
 .photo-stack-close { gap: 14px; }
 .photo-stack-navigation button { padding: 0; }
 .photo-stack-close:hover,
-.photo-stack-navigation button:hover {
+.photo-stack-navigation button:hover:not(:disabled) {
   border-color: rgba(156, 220, 201, 0.55);
   background: rgba(156, 220, 201, 0.08);
   color: #e3fff5;
 }
+.photo-stack-navigation button:disabled { opacity: 0.3; cursor: default; }
 
 .photo-stack-main {
   display: flex;
@@ -768,14 +769,14 @@ a.badge:not(.badge-master) {
   justify-content: center;
   min-width: 0;
   min-height: 0;
-  gap: clamp(32px, 5vw, 80px);
+  gap: clamp(24px, 4vw, 56px);
 }
 
 .photo-stack-cards {
   position: relative;
   flex-shrink: 0;
-  width: min(680px, 100vw - 480px, (100vh - 240px) * 1.08);
-  width: min(680px, 100vw - 480px, (100dvh - 240px) * 1.08);
+  width: min(860px, 100vw - 440px, (100vh - 210px) * 1.12);
+  width: min(860px, 100vw - 440px, (100dvh - 210px) * 1.12);
   aspect-ratio: 4 / 3.45;
   perspective: 900px;
 }
@@ -791,7 +792,7 @@ a.badge:not(.badge-master) {
 }
 .photo-card.top { cursor: grab; }
 .photo-card.dragging { cursor: grabbing; transition: none; }
-.photo-card.hidden { visibility: hidden; }
+.photo-card[hidden] { display: none; }
 
 .shot {
   display: grid;
@@ -800,22 +801,27 @@ a.badge:not(.badge-master) {
   width: 100%;
   height: 100%;
   margin: 0;
-  transform: translate(var(--x), var(--y)) rotate(var(--rotate));
-  transition: transform 0.35s cubic-bezier(0.3, 1.4, 0.5, 1);
 }
-.photo-card.top .shot { transform: none; }
-.photo-card:not(.top) .shot-meta { opacity: 0; }
-.photo-card:not(.top) .shot-image { filter: brightness(0.55) saturate(0.7); }
+.photo-card:not(.top) .shot-meta,
+.photo-card:not(.top) .shot-date { opacity: 0; }
+.photo-card:not(.top) .shot-print { filter: brightness(0.55) saturate(0.7); }
 
 .shot-image {
   position: relative;
+  min-height: 0;
+}
+.shot-print {
+  position: absolute;
+  inset: 0;
   overflow: hidden;
   border: 1px solid rgba(177, 203, 213, 0.18);
   border-radius: 12px;
   background: #101c25;
   box-shadow: 0 28px 70px -28px rgba(0, 0, 0, 0.85);
+  /* 写真だけを傾け、最初に表示した位置を背面に回っても保つ。 */
+  transform: translate(var(--x), var(--y)) rotate(var(--rotate));
 }
-.shot-image::after {
+.shot-print::after {
   position: absolute;
   inset: 0;
   background: linear-gradient(180deg, rgba(4, 11, 18, 0.16), transparent 25%, transparent 75%, rgba(4, 11, 18, 0.12));
@@ -842,7 +848,6 @@ a.badge:not(.badge-master) {
   opacity: 0.5;
   pointer-events: none;
 }
-.shot-geo,
 .shot-date {
   position: absolute;
   z-index: 1;
@@ -858,9 +863,7 @@ a.badge:not(.badge-master) {
   letter-spacing: 0.025em;
   pointer-events: none;
 }
-.shot-geo { left: 20px; }
 .shot-date { right: 20px; }
-.shot-geo:empty,
 .shot-date:empty,
 .shot-caption:empty { display: none; }
 
@@ -870,24 +873,13 @@ a.badge:not(.badge-master) {
   align-items: start;
   gap: 16px;
   min-width: 0;
-  min-height: 86px;
-  padding: 18px 2px 0;
+  min-height: 54px;
+  padding: 20px 2px 0;
 }
 .shot-copy { min-width: 0; }
-.shot-country {
-  display: block;
-  overflow: hidden;
-  font-size: clamp(24px, 2.6vw, 34px);
-  font-weight: 500;
-  line-height: 1.15;
-  letter-spacing: -0.035em;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
 .shot-caption {
   display: block;
   overflow: hidden;
-  margin-top: 7px;
   color: var(--journal-muted);
   font-size: 12px;
   line-height: 1.5;
@@ -895,7 +887,6 @@ a.badge:not(.badge-master) {
   text-overflow: ellipsis;
 }
 .shot-index {
-  padding-top: 8px;
   color: var(--journal-muted);
   font-family: "JetBrains Mono", monospace;
   font-size: 10px;
@@ -1067,21 +1058,18 @@ a.badge:not(.badge-master) {
 }
 
 @media (max-width: 960px) {
-  .photo-stack { padding: 20px; }
+  .photo-stack { padding: 16px; }
   .photo-stack[open] { gap: 16px; }
   .photo-stack-topbar { padding-bottom: 12px; }
-  .photo-stack-main { flex-direction: column; gap: 20px; }
+  .photo-stack-main { flex-direction: column; gap: 16px; }
   .photo-stack-cards {
-    width: min(580px, 100vw - 40px, (100vh - 240px - clamp(120px, 42vw, 180px)) * 1.15);
-    width: min(580px, 100vw - 40px, (100dvh - 240px - clamp(120px, 42vw, 180px)) * 1.15);
+    width: min(680px, 100vw - 32px, (100vh - 220px - clamp(120px, 42vw, 180px)) * 1.12);
+    width: min(680px, 100vw - 32px, (100dvh - 220px - clamp(120px, 42vw, 180px)) * 1.12);
   }
-  .shot-meta { min-height: 74px; padding-top: 14px; }
-  .shot-country { font-size: 27px; }
-  .shot-caption { margin-top: 4px; font-size: 11px; }
+  .shot-meta { min-height: 48px; padding-top: 14px; }
+  .shot-caption { font-size: 11px; }
   .shot-index { font-size: 9px; }
-  .shot-geo,
   .shot-date { top: 12px; padding: 3px 5px; font-size: 8px; }
-  .shot-geo { left: 12px; }
   .shot-date { right: 12px; }
   .photo-globe-wrap {
     display: grid;
@@ -1111,8 +1099,8 @@ a.badge:not(.badge-master) {
 @media (max-width: 360px) {
   .photo-stack { padding: 12px; }
   .photo-stack-cards {
-    width: min(100vw - 24px, (100vh - 240px - clamp(120px, 42vw, 180px)) * 1.15);
-    width: min(100vw - 24px, (100dvh - 240px - clamp(120px, 42vw, 180px)) * 1.15);
+    width: min(100vw - 24px, (100vh - 220px - clamp(120px, 42vw, 180px)) * 1.12);
+    width: min(100vw - 24px, (100dvh - 220px - clamp(120px, 42vw, 180px)) * 1.12);
   }
   .photo-stack-brand { gap: 10px; }
   .photo-stack-brand-mark { width: 32px; height: 32px; }
@@ -1120,10 +1108,7 @@ a.badge:not(.badge-master) {
   .photo-stack-eyebrow { font-size: 8px; }
   .photo-globe-wrap { gap: 4px 12px; }
   .photo-globe-country { font-size: 20px; }
-  .shot-meta { min-height: 66px; }
-  .shot-country { font-size: 24px; }
-  .shot-geo { max-width: calc(100% - 24px); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-  .shot-date { top: auto; bottom: 12px; }
+  .shot-meta { min-height: 42px; }
 }
 
 @media (max-height: 600px) and (orientation: landscape) {
@@ -1134,14 +1119,12 @@ a.badge:not(.badge-master) {
   .photo-stack-brand h2 { margin: 0; }
   .photo-stack-main { flex-direction: row; gap: 32px; }
   .photo-stack-cards {
-    width: min(52vw, (100vh - 150px) * 1.08);
-    width: min(52vw, (100dvh - 150px) * 1.08);
+    width: min(100vw - 290px, (100vh - 140px) * 1.12);
+    width: min(100vw - 290px, (100dvh - 140px) * 1.12);
   }
-  .shot-meta { min-height: 60px; padding-top: 10px; }
-  .shot-country { font-size: 22px; }
-  .shot-caption { margin-top: 3px; font-size: 10px; }
+  .shot-meta { min-height: 42px; padding-top: 14px; }
+  .shot-caption { font-size: 10px; }
   .shot-index { font-size: 9px; }
-  .shot-geo { top: 8px; left: 10px; max-width: calc(100% - 20px); overflow: hidden; font-size: 8px; white-space: nowrap; text-overflow: ellipsis; }
   .shot-date { top: auto; right: 10px; bottom: 8px; font-size: 8px; }
   .photo-globe-wrap { display: flex; width: 210px; gap: 5px; }
   .photo-globe-viewport {
@@ -1161,7 +1144,6 @@ a.badge:not(.badge-master) {
 @media (prefers-reduced-motion: reduce) {
   .photo-peek-card,
   .photo-card,
-  .shot,
   .photo-stack-progress > span,
   .photo-stack.closing .photo-stack-main,
   .photo-stack.closing .photo-stack-topbar,

@@ -9,7 +9,7 @@
 
   var photoGlobe = window.createPhotoGlobe ? createPhotoGlobe(formatGeo) : null;
 
-  // いちばん上の写真をドラッグして遠くまで動かすか押すと、束のいちばん下に回る。近くで離すと戻る
+  // 写真をめくると閲覧済みの写真が後ろに残る。近くで離すと戻る
   var openPhotoStack = (function() {
     var dialog = document.querySelector('.photo-stack');
     var stack = document.querySelector('.photo-stack-cards');
@@ -17,13 +17,15 @@
     var main = document.querySelector('.photo-stack-main');
     var position = document.querySelector('.photo-stack-position');
     var progress = document.querySelector('.photo-stack-progress > span');
+    var prevButton = dialog && dialog.querySelector('.photo-stack-prev');
+    var nextButton = dialog && dialog.querySelector('.photo-stack-next');
     if (!dialog || !stack || !closeButton || !dialog.showModal || !TRAVEL_PHOTOS.length) return null;
-    var SHOWN = 4;          // 重ねて見せる枚数
     var SENSITIVITY = 110;  // これより遠くまでドラッグしたらめくる(px)
     var TILT = 0.35;        // ドラッグしたときの傾き(1pxあたりの角度)
-    // 写真ごとの傾きとずれ。後ろの写真が少しだけ見えるようにずらす
+    // 写真を最初に表示したときからこの傾き・位置に置き、そのまま重ねる。
     var SCATTER = [[-1.4, -5, 4], [1.2, 5, -3], [-0.8, -3, -5], [1.6, 4, 5], [-1.2, 5, -4], [0.8, -5, 5]];
     var deck = [];
+    var current = 0;
     var closing = null;
 
     function photoNumber(index) {
@@ -34,9 +36,10 @@
     var cards = TRAVEL_PHOTOS.map(function(photo, i) {
       var card = document.createElement('div');
       card.className = 'photo-card';
+      card.hidden = true;
       var s = SCATTER[i % SCATTER.length];
-      card.innerHTML = '<figure class="shot"><div class="shot-image"><img alt=""><span class="shot-corners"></span><span class="shot-geo"></span><span class="shot-date"></span></div>' +
-        '<figcaption class="shot-meta"><div class="shot-copy"><span class="shot-country"></span><span class="shot-caption"></span></div><span class="shot-index"></span></figcaption></figure>';
+      card.innerHTML = '<figure class="shot"><div class="shot-image"><div class="shot-print"><img alt=""><span class="shot-corners"></span></div><span class="shot-date"></span></div>' +
+        '<figcaption class="shot-meta"><div class="shot-copy"><span class="shot-caption"></span></div><span class="shot-index"></span></figcaption></figure>';
       var shot = card.firstChild;
       shot.style.setProperty('--rotate', s[0] + 'deg');
       shot.style.setProperty('--x', s[1] + 'px');
@@ -46,50 +49,59 @@
       image.alt = photo.caption ? photo.caption + '(' + place + ')' : place;
       if (photo.fit === 'contain') image.style.objectFit = 'contain';
       card.querySelector('.shot-index').textContent = photoNumber(i + 1);
-      card.querySelector('.shot-country').textContent = place;
       card.querySelector('.shot-caption').textContent = photo.caption || '';
-      // 撮影場所と撮影日を、カメラの画面のように写真の上に出す
-      card.querySelector('.shot-geo').textContent = photo.geo ? formatGeo(photo.geo, photo.geoApproximate) : '';
+      // 撮影日だけを写真に重ね、国名と緯度経度は地球儀に表示する。
       card.querySelector('.shot-date').textContent = photo.date ? photo.date.replace(/-/g, '.') : '';
       card.photo = photo;
       return card;
     });
 
-    // 束の順番どおりに重ねる。見えない写真は読み込まない
+    // 現在の写真と、それまでにめくった写真だけを表示する。
+    // 閲覧済みのカードは位置を固定したまま、直前の写真ほど手前に積む。
     function layout() {
       deck.forEach(function(card, i) {
-        card.style.zIndex = deck.length - i;
-        card.classList.toggle('top', i === 0);
-        card.classList.toggle('hidden', i >= SHOWN);
-        if (i < SHOWN) {
+        card.style.zIndex = i + 1;
+        card.classList.toggle('top', i === current);
+        card.hidden = i > current;
+        // 次の写真は読み込みだけ先に済ませ、めくるまでは表示しない。
+        if (i <= current + 1) {
           var img = card.querySelector('img');
           if (!img.getAttribute('src')) img.src = card.photo.src;
         }
       });
-      var index = cards.indexOf(deck[0]) + 1;
+      prevButton.disabled = current === 0;
+      nextButton.disabled = deck.length < 2;
+      var index = cards.indexOf(deck[current]) + 1;
       if (position) position.textContent = photoNumber(index);
       if (progress) progress.style.width = (index / cards.length * 100) + '%';
-      if (photoGlobe) photoGlobe.show(deck[0].photo);
+      if (photoGlobe) photoGlobe.show(deck[current].photo);
     }
 
     function next() {
-      deck.push(deck.shift());
+      if (deck.length < 2) return;
+      // 一周したら、後ろを空にして最初の写真から見直す。
+      current = (current + 1) % deck.length;
       layout();
     }
 
     function prev() {
-      deck.unshift(deck.pop());
+      if (current === 0) return;
+      current--;
       layout();
     }
 
-    dialog.querySelector('.photo-stack-prev').addEventListener('click', prev);
-    dialog.querySelector('.photo-stack-next').addEventListener('click', next);
+    prevButton.addEventListener('click', prev);
+    nextButton.addEventListener('click', next);
 
     function open(country) {
-      // 押した国の写真をいちばん上にする
-      deck = cards.filter(function(c) { return c.photo.country === country; })
-        .concat(cards.filter(function(c) { return c.photo.country !== country; }));
+      // 選んだ国から始め、その後も国名順にたどる。
+      var start = Math.max(0, cards.findIndex(function(c) { return c.photo.country === country; }));
+      deck = cards.slice(start).concat(cards.slice(0, start));
+      current = 0;
+      drag = null;
       deck.forEach(function(card) {
+        card.hidden = true;
+        card.classList.remove('dragging');
         card.style.transform = '';
         stack.appendChild(card);
       });
@@ -114,7 +126,7 @@
     var drag = null;
     stack.addEventListener('pointerdown', function(e) {
       var card = e.target.closest('.photo-card');
-      if (!card || card !== deck[0] || e.button !== 0) return;
+      if (!card || card !== deck[current] || e.button !== 0) return;
       e.preventDefault();
       card.setPointerCapture(e.pointerId);
       card.classList.add('dragging');
@@ -134,7 +146,7 @@
       var moved = Math.max(Math.abs(drag.dx), Math.abs(drag.dy));
       drag = null;
       card.classList.remove('dragging');
-      // ばねのように元の位置(めくったときは束のいちばん下)に戻る
+      // ばねのように元の位置(めくったときは閲覧済みの束)に戻る
       card.style.transform = '';
       // 遠くまで動かしたか、ほとんど動かさずに離した(クリック)ときはめくる
       if (moved > SENSITIVITY || moved < 4) next();

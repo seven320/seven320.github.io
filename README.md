@@ -23,6 +23,7 @@
 ├── 404.html                   # 存在しない URL を開いたときのページ
 ├── css/stylesheet.css         # スタイル
 ├── js/photo-globe.js          # 写真に連動する地球儀（formatGeo を受け取るファクトリ）
+├── js/globe-data.js           # index.html を直接開く場合の地球儀データ（自動生成）
 ├── js/globe-terrain.js        # 地形テクスチャの球面への投影（WebGL）
 ├── js/travel-photos.js        # 写真・場所・日付・表示方法の一覧
 ├── js/travel.js               # 写真の切り替えと世界地図の操作
@@ -42,6 +43,8 @@ python3 -m http.server 8000
 ```
 
 ブラウザで http://localhost:8000/ を開きます。
+
+`index.html` を直接開いた場合も写真と地球儀は表示できます。地球儀はローカルファイル用の `js/globe-data.js` を読み込みます。世界地図で国を選ぶ操作はローカルサーバー経由で確認してください。
 
 ## チェック
 
@@ -67,12 +70,15 @@ uv run scripts/build_world_map.py /tmp/countries-110m.json /tmp/countries-50m.js
 ```
 
 平らな地図 (`images/world-map.svg`) は粗い 110m、写真の横の地球儀 (`images/globe.json`) は小さな島まで載っている 50m から作ります。
+同じ地球儀データから、直接ファイルを開く場合の `js/globe-data.js` も生成します。
 
 国の数は `index.html` の `travel-count` に手で書いているので、あわせて更新してください。
 
 ## 旅行の写真を足す
 
-世界地図で行った国を押すと、その国の写真を重ねたカードの束で見せています。写真は `images/travel/` に置き、`js/travel-photos.js` の `TRAVEL_PHOTOS` に1行足します。書いた順番が、写真の束の上からの順番になります。
+世界地図で行った国を押すと、その国の写真から開きます。開いた直後は1枚だけを表示し、めくった写真だけが後ろに重なります。各写真の傾きと位置は最初の表示時から固定し、後ろに回っても動かしません。キャプション・撮影日・枚数は傾けず、水平に表示します。前に戻ると重なりも戻り、開き直したときや一周したときは後ろを空にします。
+
+写真は `images/travel/` に置き、`js/travel-photos.js` の `TRAVEL_PHOTOS` に1行足します。表示順は `country` の英語名で A→Z に揃え、同じ国では登録順を保ちます。地図から開く場合も選んだ国から国名順に進み、末尾から先頭へ続きます。写真にはキャプション・撮影日・枚数を表示し、国名と緯度経度は地球儀にまとめています。
 
 写真はクリック・スワイプ・左右キーに加え、画面下の矢印ボタンでも切り替えられます。写真番号とバーで、表示中の写真の位置を確認できます。
 
@@ -87,7 +93,7 @@ uv run scripts/build_world_map.py /tmp/countries-110m.json /tmp/countries-50m.js
 ```
 
 - 国名は `scripts/build_world_map.py` の `VISITED` と同じ英語名にします
-- 地域名を表示したい場合は `place`（例: `'Hawaii'`）を指定します。世界地図との対応には `country` を使います
+- 地域名は `place`（例: `'Hawaii'`）で画像の代替テキストに補足できます。並び順・地球儀の国名・世界地図との対応には `country` を使います
 - `fit: 'contain'` を指定すると、写真を切り抜かず全体を表示します（未指定なら枠いっぱいに表示）
 - `geo: [緯度, 経度]` で地球儀の位置を指定できます。手動で補った代表座標には `geoApproximate: true` を付けると「付近」と表示します
 - 置く前に、写真の向きを直してから撮影場所の GPS などの EXIF を消します（スマホの写真には位置情報が入っていることが多いです）
