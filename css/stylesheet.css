@@ -41,11 +41,6 @@ html {
   scroll-behavior: smooth;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-}
 
 body {
   margin: 0;
@@ -272,12 +267,6 @@ a:hover {
   transform: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .icon,
-  .icon-bubble {
-    transition: none;
-  }
-}
 
 .hero-kicker {
   margin: 0;
@@ -928,7 +917,8 @@ a.badge:not(.badge-master) {
   display: block;
   width: 100%;
   height: 100%;
-  touch-action: none;
+  /* 縦のスワイプはダイアログのスクロールに使い、横のドラッグとピンチだけ地球儀で受け取る */
+  touch-action: pan-y;
 }
 .photo-globe-pulse {
   position: absolute;
@@ -1102,17 +1092,31 @@ a.badge:not(.badge-master) {
   .photo-stack-eyebrow { letter-spacing: 0.05em; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .photo-peek-card,
-  .photo-card,
-  .photo-stack-progress > span,
-  .photo-stack.closing .photo-stack-main,
-  .photo-stack.closing .photo-stack-topbar,
-  .photo-stack.closing .photo-stack-footer { transition: none; }
-  .photo-stack[open] .photo-stack-cards,
-  .photo-stack[open] .photo-globe-wrap { animation: none; }
-  .photo-globe-pulse { display: none; }
+/* 横向きのスマホ: 写真と地球儀を横に並べ、写真は画面の高さに収める */
+@media (max-height: 600px) and (orientation: landscape) {
+  .photo-stack { padding: 12px 24px; }
+  .photo-stack[open] { gap: 8px; }
+  .photo-stack-topbar { padding-bottom: 0; border: 0; }
+  .photo-stack-eyebrow { display: none; }
+  .photo-stack-brand h2 { margin: 0; }
+  .photo-stack-main { flex-direction: row; align-items: center; gap: 24px; padding: 0; }
+  /* カードの高さ = 幅 × 3/4 + 下のキャプション(約4.5rem)。上下のバーの分を引いた高さに収める */
+  .photo-stack-cards {
+    width: min(100vw - 300px, (100vh - 200px) * 4 / 3);
+    width: min(100vw - 300px, (100dvh - 200px) * 4 / 3);
+  }
+  .photo-globe-wrap { display: flex; flex-direction: column; align-items: center; width: 200px; gap: 6px; }
+  .photo-globe-viewport {
+    width: clamp(80px, 100vh - 250px, 170px);
+    width: clamp(80px, 100dvh - 250px, 170px);
+  }
+  .photo-globe-eyebrow,
+  .photo-globe-legend { display: none; }
+  .photo-globe-country { margin: 0; font-size: 1.125rem; }
+  .photo-stack-footer { flex-direction: row; padding-top: 0; border: 0; }
+  .photo-stack-navigation { order: 0; gap: 12px; }
 }
+
 
 /* career part */
 .timeline {

@@ -21,7 +21,7 @@
     var announcement = document.querySelector('.photo-stack-announcement');
     var prevButton = dialog && dialog.querySelector('.photo-stack-prev');
     var nextButton = dialog && dialog.querySelector('.photo-stack-next');
-    if (!dialog || !stack || !closeButton || !dialog.showModal || !TRAVEL_PHOTOS.length) return null;
+    if (!dialog || !stack || !closeButton || !announcement || !dialog.showModal || !TRAVEL_PHOTOS.length) return null;
     var SENSITIVITY = 110;  // これより遠くまでドラッグしたらめくる(px)
     var TILT = 0.35;        // ドラッグしたときの傾き(1pxあたりの角度)
     // 写真を最初に表示したときからこの傾き・位置に置き、そのまま重ねる。
@@ -137,7 +137,6 @@
       dialog.classList.remove('closing');
       dialog.showModal();
       dialog.scrollTop = 0;
-      announce();
     }
 
     // 縮みながら消えてから閉じる
@@ -300,14 +299,14 @@
           var title = el.querySelector('title');
           el.dataset.name = title ? title.textContent : '';
           if (title) title.remove();
-          el.setAttribute('aria-label', el.dataset.name + '、訪問済み');
           if (openPhotoStack && hasPhoto[el.dataset.name]) {
             el.classList.add('has-photo');
             el.setAttribute('tabindex', '0');
             el.setAttribute('role', 'button');
             el.setAttribute('aria-label', el.dataset.name + 'の写真を見る');
           }
-          el.addEventListener('focus', function() { activate(el); });
+          // 閉じたときにフォーカスを戻しただけ(マウス操作の後)では、ハイライトを出さない。
+          el.addEventListener('focus', function() { if (el.matches(':focus-visible')) activate(el); });
           el.addEventListener('blur', function() { activate(null); });
           el.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' || e.key === ' ') {

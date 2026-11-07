@@ -37,6 +37,7 @@ function createPhotoGlobe(formatGeo, onPick) {
   var places = null;     // 撮影場所 [{ lonLat, photo }]。同じ場所の写真は1枚目だけ
   var dots = [];         // 直前に描いた、押せる点の位置 [{ x, y, photo }]
   var active = false;
+  var fresh = true;      // 開いてからまだ地球儀を出していない(最初は回り込まずにその場所を向ける)
   var request = 0;       // 読み込み待ちの間に写真が変わったら、古い結果は使わない
   var frame = 0;
   var rotation = [-140, -20];
@@ -72,9 +73,12 @@ function createPhotoGlobe(formatGeo, onPick) {
     var p = Array.from(pointers.values());
     return Math.hypot(p[0][0] - p[1][0], p[0][1] - p[1][1]);
   }
-  function resetGesture() {
-    pinch = pointers.size === 2 ? { distance: pinchDistance(), zoom: zoom } : null;
-    drag = null;
+  // 指の本数が変わるたびに、ピンチかドラッグかを決め直す。
+  // ピンチの後に残った指では続けて回せるが、離してもタップ(点の選択)にはしない。
+  function resetGesture(afterPinch) {
+    var p = Array.from(pointers.values());
+    pinch = p.length === 2 ? { distance: pinchDistance(), zoom: zoom } : null;
+    drag = p.length === 1 ? { x: p[0][0], y: p[0][1], rotation: rotation.slice(), moved: !!afterPinch } : null;
   }
   function dotAt(e) {
     var rect = canvas.getBoundingClientRect();
@@ -92,7 +96,6 @@ function createPhotoGlobe(formatGeo, onPick) {
     pointers.set(e.pointerId, [e.clientX, e.clientY]);
     canvas.setPointerCapture(e.pointerId);
     resetGesture();
-    if (pointers.size === 1) drag = { x: e.clientX, y: e.clientY, rotation: rotation.slice(), moved: false };
   });
   canvas.addEventListener('pointermove', function(e) {
     if (!pointers.has(e.pointerId)) {
@@ -118,9 +121,10 @@ function createPhotoGlobe(formatGeo, onPick) {
     requestDraw();
   });
   function endPointer(e) {
-    if (!pointers.delete(e.pointerId)) return;
+    var wasPinch = !!pinch;
     var tapped = drag && !drag.moved;
-    resetGesture();
+    if (!pointers.delete(e.pointerId)) return;
+    resetGesture(wasPinch);
     if (e.pointerType === 'mouse') canvas.style.cursor = 'grab';
     if (tapped && e.type === 'pointerup') {
       var dot = onPick && dotAt(e);
@@ -357,7 +361,6 @@ function createPhotoGlobe(formatGeo, onPick) {
   // ---- 外から呼ぶ関数 ----
   // 写真の場所まで回す。開いた直後は回り込まず、最初からその場所を向けて表示する。
   function show(photo) {
-    var opening = !active;
     var current = ++request;
     active = true;
     load().then(function() {
@@ -372,13 +375,20 @@ function createPhotoGlobe(formatGeo, onPick) {
       // 撮影場所を真ん中に向ける(拡大してもピンが中央に残る)。経度は差が180°以内になる方へ回す。
       var to = [-lonLat[0], -lonLat[1]];
       to[0] = rotation[0] + ((to[0] - rotation[0]) % 360 + 540) % 360 - 180;
-      turn = { from: opening ? to : rotation.slice(), to: to, start: null };
+      if (fresh) {
+        rotation = to;
+        turn = null;
+        fresh = false;
+      } else {
+        turn = { from: rotation.slice(), to: to, start: null };
+      }
       requestDraw();
     }, function() {});
   }
 
   function stop() {
     active = false;
+    fresh = true;
     request++;
     cancelAnimationFrame(frame);
     frame = 0;
@@ -389,8 +399,7 @@ function createPhotoGlobe(formatGeo, onPick) {
     wrap.hidden = true;
   }
 
-  // 画面サイズや「視差効果を減らす」設定が変わったら描き直す。
+  // 画面サイズが変わったらピンと波紋の位置も描き直す。
   window.addEventListener('resize', requestDraw);
-  window.siteMotion.subscribe(requestDraw);
   return { show: show, stop: stop };
 }
