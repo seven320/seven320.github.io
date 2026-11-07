@@ -41,11 +41,6 @@ html {
   scroll-behavior: smooth;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-}
 
 body {
   margin: 0;
@@ -135,7 +130,10 @@ a:hover {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 60px;
+  min-height: 60px;
+  padding-block: 8px;
+  gap: 16px;
+  flex-wrap: wrap;
 }
 
 .logo {
@@ -155,7 +153,8 @@ a:hover {
 
 .nav {
   display: flex;
-  gap: 24px;
+  flex-wrap: wrap;
+  gap: 8px 24px;
 }
 
 .nav a {
@@ -268,12 +267,6 @@ a:hover {
   transform: none;
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .icon,
-  .icon-bubble {
-    transition: none;
-  }
-}
 
 .hero-kicker {
   margin: 0;
@@ -659,12 +652,14 @@ a.badge:not(.badge-master) {
 
 /* 写真を主役にした旅の記録。地球儀は撮影場所をたどるための小さな地図。 */
 .photo-stack {
-  --journal-line: rgba(166, 202, 216, 0.15);
+  --journal-line: #637783;
   --journal-muted: #91a7b3;
   width: 100%;
   max-width: none;
   height: 100%;
   max-height: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   margin: 0;
   padding: 24px max(24px, (100vw - 1440px) / 2);
   border: 0;
@@ -676,7 +671,7 @@ a.badge:not(.badge-master) {
 
 .photo-stack[open] {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(min-content, 1fr) auto;
   gap: 24px;
 }
 
@@ -695,8 +690,9 @@ a.badge:not(.badge-master) {
 }
 
 .photo-stack-topbar {
+  flex-wrap: wrap;
   padding-bottom: 16px;
-  border-bottom: 1px solid var(--journal-line);
+  border-bottom: 1px solid rgba(166, 202, 216, 0.15);
 }
 
 .photo-stack-brand {
@@ -721,9 +717,9 @@ a.badge:not(.badge-master) {
   margin: 0;
   color: var(--journal-muted);
   font-family: "JetBrains Mono", monospace;
-  font-size: 9px;
+  font-size: 0.75rem;
   line-height: 1.5;
-  letter-spacing: 0.22em;
+  letter-spacing: 0.15em;
 }
 
 .photo-stack-brand h2 {
@@ -748,7 +744,7 @@ a.badge:not(.badge-master) {
   background: rgba(255, 255, 255, 0.025);
   color: #cad9df;
   font: inherit;
-  font-size: 11px;
+  font-size: 0.875rem;
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s, color 0.2s;
 }
@@ -765,41 +761,39 @@ a.badge:not(.badge-master) {
 
 .photo-stack-main {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
+  padding: 16px 12px;
   justify-content: center;
   min-width: 0;
-  min-height: 0;
+  min-height: auto;
   gap: clamp(24px, 4vw, 56px);
 }
 
 .photo-stack-cards {
   position: relative;
-  flex-shrink: 0;
-  width: min(860px, 100vw - 440px, (100vh - 210px) * 1.12);
-  width: min(860px, 100vw - 440px, (100dvh - 210px) * 1.12);
-  aspect-ratio: 4 / 3.45;
+  flex-shrink: 1;
+  min-width: 0;
+  width: min(860px, max(320px, (100dvh - 250px) * 1.12));
   perspective: 900px;
 }
 
-.photo-stack-cards:focus { outline: none; }
 .photo-card {
   position: absolute;
   inset: 0;
-  touch-action: none;
+  touch-action: pan-y pinch-zoom;
   user-select: none;
   -webkit-user-select: none;
   transition: transform 0.45s cubic-bezier(0.3, 1.6, 0.5, 1);
 }
-.photo-card.top { cursor: grab; }
+.photo-card.top { position: relative; width: 100%; cursor: grab; }
 .photo-card.dragging { cursor: grabbing; transition: none; }
 .photo-card[hidden] { display: none; }
 
 .shot {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto;
   width: 100%;
-  height: 100%;
   margin: 0;
 }
 .photo-card:not(.top) .shot-meta,
@@ -808,7 +802,7 @@ a.badge:not(.badge-master) {
 
 .shot-image {
   position: relative;
-  min-height: 0;
+  aspect-ratio: 4 / 3;
 }
 .shot-print {
   position: absolute;
@@ -855,10 +849,10 @@ a.badge:not(.badge-master) {
   padding: 4px 8px;
   border: 1px solid rgba(255, 255, 255, 0.12);
   border-radius: 5px;
-  background: rgba(9, 18, 25, 0.52);
+  background: #101c25;
   color: #e4eeef;
   font-family: "JetBrains Mono", monospace;
-  font-size: 9px;
+  font-size: 0.75rem;
   line-height: 1.5;
   letter-spacing: 0.025em;
   pointer-events: none;
@@ -873,23 +867,21 @@ a.badge:not(.badge-master) {
   align-items: start;
   gap: 16px;
   min-width: 0;
-  min-height: 54px;
+  min-height: 4.5rem;
   padding: 20px 2px 0;
 }
 .shot-copy { min-width: 0; }
 .shot-caption {
   display: block;
-  overflow: hidden;
   color: var(--journal-muted);
-  font-size: 12px;
-  line-height: 1.5;
-  white-space: nowrap;
-  text-overflow: ellipsis;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
 }
 .shot-index {
   color: var(--journal-muted);
   font-family: "JetBrains Mono", monospace;
-  font-size: 10px;
+  font-size: 0.75rem;
   white-space: nowrap;
 }
 
@@ -919,14 +911,14 @@ a.badge:not(.badge-master) {
   width: clamp(140px, 100dvh - 420px, 320px);
   aspect-ratio: 1;
   overflow: hidden;
-  border-radius: 50%;
 }
+/* 丸の大きさと縁のぼかしは canvas 側で描く(拡大すると円が広がり、外側が薄くなる) */
 .photo-globe {
   display: block;
   width: 100%;
   height: 100%;
-  border-radius: 50%;
-  touch-action: none;
+  /* 縦のスワイプはダイアログのスクロールに使い、横のドラッグとピンチだけ地球儀で受け取る */
+  touch-action: pan-y;
 }
 .photo-globe-pulse {
   position: absolute;
@@ -956,65 +948,73 @@ a.badge:not(.badge-master) {
   margin: 0;
   color: var(--journal-muted);
   font-family: "JetBrains Mono", "Hiragino Sans", sans-serif;
-  font-size: 10px;
+  font-size: 0.875rem;
+  overflow-wrap: anywhere;
   line-height: 1.6;
   letter-spacing: 0.015em;
 }
+/* 倍率は 1×・2×・4× の切り替え。地球儀より目立たないよう小さく控えめにする */
 .photo-globe-controls {
   display: inline-flex;
-  align-items: center;
+  gap: 2px;
+  padding: 2px;
   border: 1px solid var(--journal-line);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.025);
 }
 .photo-globe-controls button {
-  min-width: 44px;
-  min-height: 44px;
-  padding: 6px 10px;
+  min-width: 32px;
+  min-height: 24px;
+  padding: 2px 8px;
   border: 0;
   border-radius: 999px;
   background: transparent;
-  color: #9fdac8;
+  color: var(--journal-muted);
   font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
+  font-size: 0.75rem;
+  line-height: 1.4;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
 }
-.photo-globe-controls button:hover:not(:disabled) { background: rgba(156, 220, 201, 0.08); }
-.photo-globe-controls button:disabled { opacity: 0.25; cursor: default; }
-.photo-globe-controls .photo-globe-zoom-reset {
-  min-width: 64px;
-  border-right: 1px solid var(--journal-line);
-  border-left: 1px solid var(--journal-line);
-  border-radius: 0;
-  color: #dce9ec;
+.photo-globe-controls button:hover { color: #dce9ec; }
+.photo-globe-controls button[aria-pressed="true"] {
+  background: rgba(56, 225, 196, 0.14);
+  color: #38e1c4;
+}
+/* 指で押す端末では、見た目はそのままで押せる範囲だけ広げる */
+@media (pointer: coarse) {
+  .photo-globe-controls button { position: relative; }
+  .photo-globe-controls button::after {
+    content: "";
+    position: absolute;
+    inset: -10px -4px;
+  }
 }
 .photo-globe-legend {
   display: flex;
   gap: 16px;
   margin: 4px 0 0;
   color: var(--journal-muted);
-  font-size: 9px;
+  font-size: 0.75rem;
+  flex-wrap: wrap;
 }
 .photo-globe-legend span::before {
   display: inline-block;
-  width: 5px;
-  height: 5px;
+  width: 9px;
+  height: 9px;
   margin: 0 6px 1px 0;
-  border-radius: 50%;
-  background: #69bba5;
+  background: #38e1c4;
   content: "";
 }
-.photo-globe-legend span:last-child::before { background: #ffb454; }
+.photo-globe-legend span:last-child::before { background: #ffb454; border-radius: 50%; box-shadow: 0 0 0 2px #101720, 0 0 0 3px #ffb454; }
 
 .photo-stack-footer {
   padding-top: 16px;
-  border-top: 1px solid var(--journal-line);
+  border-top: 1px solid rgba(166, 202, 216, 0.15);
 }
 .photo-stack-hint {
   margin: 0;
   color: var(--journal-muted);
-  font-size: 10px;
+  font-size: 0.875rem;
   letter-spacing: 0.04em;
 }
 .photo-stack-hint > span {
@@ -1022,12 +1022,12 @@ a.badge:not(.badge-master) {
   color: #cfdfdf;
   font-family: "JetBrains Mono", monospace;
 }
-.photo-stack-navigation { display: flex; align-items: center; gap: 16px; }
+.photo-stack-navigation { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; }
 .photo-stack-position {
   min-width: 48px;
   color: #c4d5dc;
   font-family: "JetBrains Mono", monospace;
-  font-size: 11px;
+  font-size: 0.875rem;
   text-align: center;
 }
 .photo-stack-progress {
@@ -1060,98 +1060,63 @@ a.badge:not(.badge-master) {
 @media (max-width: 960px) {
   .photo-stack { padding: 16px; }
   .photo-stack[open] { gap: 16px; }
-  .photo-stack-topbar { padding-bottom: 12px; }
-  .photo-stack-main { flex-direction: column; gap: 16px; }
-  .photo-stack-cards {
-    width: min(680px, 100vw - 32px, (100vh - 220px - clamp(120px, 42vw, 180px)) * 1.12);
-    width: min(680px, 100vw - 32px, (100dvh - 220px - clamp(120px, 42vw, 180px)) * 1.12);
-  }
-  .shot-meta { min-height: 48px; padding-top: 14px; }
-  .shot-caption { font-size: 11px; }
-  .shot-index { font-size: 9px; }
-  .shot-date { top: 12px; padding: 3px 5px; font-size: 8px; }
-  .shot-date { right: 12px; }
+  .photo-stack-topbar { gap: 12px; padding-bottom: 12px; }
+  .photo-stack-main { flex-direction: column; align-items: center; gap: 16px; }
+  .photo-stack-cards { width: min(680px, 100%); }
+  .shot-meta { padding-top: 16px; }
+  .shot-date { top: 12px; right: 12px; padding: 3px 5px; }
   .photo-globe-wrap {
     display: grid;
-    grid-template-columns: clamp(120px, 42vw, 180px) minmax(0, 1fr);
+    grid-template-columns: minmax(80px, 1fr) minmax(0, 1.25fr);
     align-content: center;
     justify-items: start;
-    gap: 5px 16px;
+    gap: 5px 12px;
     width: min(440px, 100%);
   }
-  .photo-globe-viewport {
-    grid-column: 1;
-    grid-row: 1 / 5;
-    width: 100%;
-  }
-  .photo-globe-eyebrow { grid-column: 2; grid-row: 1; font-size: 8px; }
-  .photo-globe-country { grid-column: 2; grid-row: 2; font-size: 23px; }
-  .photo-globe-label { grid-column: 2; grid-row: 3; font-size: 9px; }
-  .photo-globe-controls { grid-column: 2; grid-row: 4; }
-  .photo-globe-controls .photo-globe-zoom-reset { min-width: 58px; }
-  .photo-globe-legend { display: none; }
-  .photo-stack-footer { flex-direction: column; gap: 8px; padding-top: 12px; }
-  .photo-stack-navigation { order: -1; gap: 14px; }
-  .photo-stack-progress { width: 70px; }
-  .photo-stack-hint { font-size: 9px; }
+  .photo-globe-viewport { grid-column: 1; grid-row: 1 / 4; width: 100%; }
+  .photo-globe-eyebrow { grid-column: 2; grid-row: 1; }
+  .photo-globe-country { grid-column: 2; grid-row: 2; font-size: 1.25rem; overflow-wrap: anywhere; }
+  .photo-globe-label { grid-column: 2; grid-row: 3; }
+  .photo-globe-controls { grid-column: 1 / -1; grid-row: 4; justify-self: center; }
+  .photo-globe-legend { grid-column: 1 / -1; justify-self: center; }
+  .photo-stack-footer { flex-direction: column; gap: 12px; padding-top: 12px; }
+  .photo-stack-navigation { order: -1; gap: 12px; }
+  .photo-stack-progress { width: 48px; }
 }
 
 @media (max-width: 360px) {
   .photo-stack { padding: 12px; }
-  .photo-stack-cards {
-    width: min(100vw - 24px, (100vh - 220px - clamp(120px, 42vw, 180px)) * 1.12);
-    width: min(100vw - 24px, (100dvh - 220px - clamp(120px, 42vw, 180px)) * 1.12);
-  }
-  .photo-stack-brand { gap: 10px; }
-  .photo-stack-brand-mark { width: 32px; height: 32px; }
-  .photo-stack-brand h2 { font-size: 15px; }
-  .photo-stack-eyebrow { font-size: 8px; }
-  .photo-globe-wrap { gap: 4px 12px; }
-  .photo-globe-country { font-size: 20px; }
-  .shot-meta { min-height: 42px; }
+  .photo-stack-brand { gap: 8px; }
+  .photo-stack-brand-mark { display: none; }
+  .photo-stack-brand h2 { font-size: 1rem; }
+  .photo-stack-eyebrow { letter-spacing: 0.05em; }
 }
 
+/* 横向きのスマホ: 写真と地球儀を横に並べ、写真は画面の高さに収める */
 @media (max-height: 600px) and (orientation: landscape) {
   .photo-stack { padding: 12px 24px; }
-  .photo-stack[open] { gap: 10px; }
+  .photo-stack[open] { gap: 8px; }
   .photo-stack-topbar { padding-bottom: 0; border: 0; }
   .photo-stack-eyebrow { display: none; }
   .photo-stack-brand h2 { margin: 0; }
-  .photo-stack-main { flex-direction: row; gap: 32px; }
+  .photo-stack-main { flex-direction: row; align-items: center; gap: 24px; padding: 0; }
+  /* カードの高さ = 幅 × 3/4 + 下のキャプション(約4.5rem)。上下のバーの分を引いた高さに収める */
   .photo-stack-cards {
-    width: min(100vw - 290px, (100vh - 140px) * 1.12);
-    width: min(100vw - 290px, (100dvh - 140px) * 1.12);
+    width: min(100vw - 300px, (100vh - 200px) * 4 / 3);
+    width: min(100vw - 300px, (100dvh - 200px) * 4 / 3);
   }
-  .shot-meta { min-height: 42px; padding-top: 14px; }
-  .shot-caption { font-size: 10px; }
-  .shot-index { font-size: 9px; }
-  .shot-date { top: auto; right: 10px; bottom: 8px; font-size: 8px; }
-  .photo-globe-wrap { display: flex; width: 210px; gap: 5px; }
+  .photo-globe-wrap { display: flex; flex-direction: column; align-items: center; width: 200px; gap: 6px; }
   .photo-globe-viewport {
-    width: clamp(80px, 100vh - 240px, 190px);
-    width: clamp(80px, 100dvh - 240px, 190px);
+    width: clamp(80px, 100vh - 250px, 170px);
+    width: clamp(80px, 100dvh - 250px, 170px);
   }
   .photo-globe-eyebrow,
   .photo-globe-legend { display: none; }
-  .photo-globe-country { margin: 0; font-size: 18px; }
-  .photo-globe-label { font-size: 8px; }
+  .photo-globe-country { margin: 0; font-size: 1.125rem; }
   .photo-stack-footer { flex-direction: row; padding-top: 0; border: 0; }
   .photo-stack-navigation { order: 0; gap: 12px; }
-  .photo-stack-progress { width: 54px; }
-  .photo-stack-hint { max-width: 150px; font-size: 9px; }
 }
 
-@media (prefers-reduced-motion: reduce) {
-  .photo-peek-card,
-  .photo-card,
-  .photo-stack-progress > span,
-  .photo-stack.closing .photo-stack-main,
-  .photo-stack.closing .photo-stack-topbar,
-  .photo-stack.closing .photo-stack-footer { transition: none; }
-  .photo-stack[open] .photo-stack-cards,
-  .photo-stack[open] .photo-globe-wrap { animation: none; }
-  .photo-globe-pulse { display: none; }
-}
 
 /* career part */
 .timeline {
@@ -1452,28 +1417,8 @@ a.badge:not(.badge-master) {
     padding: 0 16px;
   }
 
-  /* スマホではリンクを横スクロールで見せる */
-  .header-inner {
-    gap: 16px;
-  }
-
-  .nav {
-    gap: 16px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    white-space: nowrap;
-  }
-
-  .nav::-webkit-scrollbar {
-    display: none;
-  }
-
-  .nav {
-    /* 続きがあることが分かるように右端をぼかす */
-    padding-right: 24px;
-    mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
-    -webkit-mask-image: linear-gradient(to right, black calc(100% - 32px), transparent);
-  }
+  .header-inner { gap: 4px 16px; }
+  .nav { gap: 4px 16px; }
 
   .hero {
     padding: 60px 0;
@@ -1513,4 +1458,31 @@ a.badge:not(.badge-master) {
   .travel {
     grid-template-columns: 1fr;
   }
+}
+
+/* 拡大時にも、ナビゲーションが画面の大部分を覆わないようにする。 */
+@media (max-height: 600px) {
+  .site-header { position: static; }
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 端末で「視差効果を減らす」を有効にしている人には、アニメーションをすべて止める */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+  .photo-globe-pulse { display: none; }
 }

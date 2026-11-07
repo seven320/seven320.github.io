@@ -160,8 +160,13 @@
           </div>
           <!-- JS で SVG をページに埋め込み、行った国を押すとその国の写真を出す。埋め込めないときは画像のまま -->
           <div class="travel-map-wrap">
-            <img class="travel-map" src="images/world-map.svg" width="960" height="473" loading="lazy" alt="行った国を塗った世界地図">
+            <img class="travel-map" src="images/world-map.svg" width="960" height="453" loading="lazy" alt="行った国を塗った世界地図">
             <p class="travel-label" aria-hidden="true"></p>
+          </div>
+          <!-- 地図の色を見なくても分かるように、訪問した国・地域の名前は読み上げ用に一覧でも持つ -->
+          <div class="sr-only">
+            <p>訪問した国・地域の一覧</p>
+            <ul class="travel-country-list"></ul>
           </div>
         </div>
       </div>
@@ -336,38 +341,39 @@
   </main>
 
   <!-- 旅行の写真の束。ドラッグするか押すと次の写真へ進み、閲覧済みの写真だけが後ろに残る -->
-  <dialog class="photo-stack" aria-label="旅行の写真">
+  <dialog class="photo-stack" aria-labelledby="photo-stack-title" aria-describedby="photo-stack-help">
     <div class="photo-stack-topbar">
       <div class="photo-stack-brand">
         <span class="photo-stack-brand-mark" aria-hidden="true">↗</span>
         <div>
           <p class="photo-stack-eyebrow">TRAVEL JOURNAL</p>
-          <h2>旅の記録</h2>
+          <h2 id="photo-stack-title">旅の記録</h2>
         </div>
       </div>
-      <button type="button" class="photo-stack-close">
+      <button type="button" class="photo-stack-close" autofocus>
         <span>閉じる</span>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5"/></svg>
       </button>
     </div>
-    <!-- 開いたときは束にフォーカスを置いて、そのまま ← → キーでめくれるようにする -->
+    <p id="photo-stack-help" class="sr-only">前・次のボタン、または左右の矢印キーで写真を切り替えます。Escape キーで閉じます。</p>
+    <p class="photo-stack-announcement sr-only" role="status" aria-atomic="true"></p>
     <div class="photo-stack-main">
-      <div class="photo-stack-cards" tabindex="-1" autofocus></div>
+      <div class="photo-stack-cards"></div>
       <!-- いちばん上の写真を撮った場所に回る地球儀。読み込めないときは出さない -->
       <div class="photo-globe-wrap" hidden>
         <p class="photo-globe-eyebrow" aria-hidden="true">ON THE MAP</p>
-        <div class="photo-globe-viewport" title="ホイール・ピンチで拡大・縮小">
+        <div class="photo-globe-viewport" title="ドラッグで回転、ホイール・ピンチで拡大・縮小">
           <canvas class="photo-globe" aria-hidden="true"></canvas>
           <span class="photo-globe-pulse" aria-hidden="true" hidden></span>
         </div>
-        <p class="photo-globe-country"></p>
+        <p class="photo-globe-country" lang="en"></p>
         <p class="photo-globe-label"></p>
-        <div class="photo-globe-controls" role="group" aria-label="地球儀の拡大・縮小">
-          <button type="button" class="photo-globe-zoom-out" aria-label="地球儀を縮小" title="縮小" disabled>−</button>
-          <button type="button" class="photo-globe-zoom-reset" aria-label="現在1.0倍。1倍に戻す" title="1倍に戻す">1.0×</button>
-          <button type="button" class="photo-globe-zoom-in" aria-label="地球儀を拡大" title="拡大">＋</button>
+        <div class="photo-globe-controls" role="group" aria-label="地球儀の倍率">
+          <button type="button" data-zoom="1" aria-pressed="true">1×</button>
+          <button type="button" data-zoom="2" aria-pressed="false">2×</button>
+          <button type="button" data-zoom="4" aria-pressed="false">4×</button>
         </div>
-        <p class="photo-globe-legend"><span>訪問した国</span><span>撮影場所</span></p>
+        <p class="photo-globe-legend"><span>訪問した国・地域</span><span>撮影場所</span></p>
       </div>
     </div>
     <div class="photo-stack-footer">
@@ -376,7 +382,7 @@
         <button type="button" class="photo-stack-prev" aria-label="前の写真">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m12 5-5 5 5 5" stroke="currentColor" stroke-width="1.5"/></svg>
         </button>
-        <span class="photo-stack-position" aria-live="polite" aria-atomic="true"></span>
+        <span class="photo-stack-position"></span>
         <span class="photo-stack-progress" aria-hidden="true"><span></span></span>
         <button type="button" class="photo-stack-next" aria-label="次の写真">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="m8 5 5 5-5 5" stroke="currentColor" stroke-width="1.5"/></svg>
@@ -389,8 +395,9 @@
     <p class="analytics-note">利用状況の計測のために Google Analytics を利用しています。</p>
     <p>© denden</p>
   </footer>
-  <script src="js/globe-terrain.js"></script>
+  <script src="js/motion.js"></script>
   <script src="js/photo-globe.js"></script>
+  <script src="js/travel-countries.js"></script>
   <script src="js/travel-photos.js"></script>
   <script src="js/travel.js"></script>
   <script>
@@ -401,7 +408,7 @@
     var canvas = document.querySelector('.hero-fx');
     if (!hero || !canvas || !canvas.getContext) return;
     var ctx = canvas.getContext('2d');
-    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var motion = window.siteMotion;
 
     var CELL = 6;          // 水面1マスの大きさ(px)
     var DAMPING = 0.965;   // 波の減衰(小さいほど早く消えて広がる距離が短くなる)
@@ -535,7 +542,7 @@
     }
 
     function shouldRun() {
-      return visible && !document.hidden && !reduceMotion.matches;
+      return visible && !document.hidden && !motion.reduced;
     }
 
     // 見えている間だけ動かす
@@ -544,7 +551,7 @@
         running = true;
         requestAnimationFrame(loop);
       }
-      if (reduceMotion.matches) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (motion.reduced) ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
     // 画面上の位置を水面のマスに変換する(canvasは引き伸ばして表示している)
@@ -568,7 +575,7 @@
     hero.addEventListener('pointerdown', function(e) {
       // リンクやボタンを押したときは水滴を落とさない
       // 携帯ではスクロールのたびに揺れてしまうので、タッチでは落とさない
-      if (reduceMotion.matches || e.pointerType === 'touch' || e.target.closest('a, button')) return;
+      if (motion.reduced || e.pointerType === 'touch' || e.target.closest('a, button')) return;
       poke(e.clientX, e.clientY);
     });
     new IntersectionObserver(function(entries) {
@@ -576,7 +583,7 @@
       update();
     }).observe(hero);
     document.addEventListener('visibilitychange', update);
-    reduceMotion.addEventListener('change', update);
+    motion.subscribe(update);
     update();
   })();
 
@@ -586,7 +593,7 @@
     var icon = document.querySelector('.icon');
     var bubble = document.querySelector('.icon-bubble');
     if (!button || !icon || !bubble) return;
-    var reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+    var motion = window.siteMotion;
     var COMBO = 3;          // 鳴くまでの連打回数
     var COMBO_GAP = 600;    // これより間が空いたら連打を数え直す(ms)
     // 鳴くときのセリフ。毎回この中からランダムに選ぶ
@@ -602,7 +609,7 @@
     var bubbleTimer = null;
 
     button.addEventListener('click', function() {
-      if (!reduceMotion.matches) {
+      if (!motion.reduced) {
         turns++;
         // コインのように縦の軸で回す
         icon.style.transform = 'perspective(600px) rotateY(' + turns * 360 + 'deg)';
