@@ -160,11 +160,6 @@ function createPhotoGlobe(formatGeo, onPick) {
     ready = LIBS.reduce(function(chain, src, i) {
       return chain.then(function() { if (!loaded[i]()) return loadScript(src); });
     }, Promise.resolve()).then(function() {
-      // file:// ではローカル JSON を fetch できないため、同じデータの JS 版を読む。
-      if (location.protocol === 'file:') {
-        return window.PHOTO_GLOBE_DATA ||
-          loadScript('js/globe-data.js').then(function() { return window.PHOTO_GLOBE_DATA; });
-      }
       return fetch('images/globe.json').then(function(res) {
         return res.ok ? res.json() : Promise.reject(res.status);
       });

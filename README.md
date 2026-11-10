@@ -24,17 +24,18 @@
 ├── css/stylesheet.css         # スタイル
 ├── js/motion.js               # 端末の「視差効果を減らす」設定を JS のアニメーションで共有
 ├── js/photo-globe.js          # 写真に連動する地球儀（formatGeo と、点を押したときの onPick を受け取るファクトリ）
-├── js/globe-data.js           # index.html を直接開く場合の地球儀データ（自動生成）
 ├── js/travel-countries.js     # 訪問した国・地域の一覧（読み上げ用。自動生成）
 ├── js/travel-photos.js        # 写真・場所・説明文・日付・表示方法の一覧
 ├── js/travel.js               # 写真の切り替えと世界地図の操作
 ├── fonts/                     # Web フォント（Inter, JetBrains Mono のラテン文字部分を自前で配信）
 ├── images/                    # アイコン・作品画像・世界地図
 ├── scripts/build_world_map.py # 世界地図 (images/world-map.svg) と写真の地球儀の国の形 (images/globe.json) の生成スクリプト
+├── scripts/build_og_image.py  # SNS でシェアしたときのカード画像 (images/og-image.jpg) の生成スクリプト
 └── .github/workflows/check.yml # HTML の検証とリンク切れチェック
 ```
 
 - **水面エフェクト**: ヒーロー部分の背景は canvas に描いています。毎秒の時刻を SHA-256 でハッシュ化した値で水滴を落とし、波動方程式で波紋を広げています。画面外にあるときやタブが裏にあるとき、`prefers-reduced-motion` が有効なときは止まります。
+- **SNS・検索**: シェアしたときは横長のカード画像 (`images/og-image.jpg`) を表示します。アイコンや肩書きを変えたら `uv run scripts/build_og_image.py` で作り直します（macOS のヒラギノ角ゴシックを使います）。検索エンジン向けに、名前と各 SNS のリンクを JSON-LD (schema.org の Person) で書いています。
 - **表示速度**: フォントは自前で配信してプリロードし、Google Analytics (GA4) はページの読み込みが終わってから遅らせて読み込んでいます。
 
 ## 手元で確認する
@@ -45,7 +46,7 @@ python3 -m http.server 8000
 
 ブラウザで http://localhost:8000/ を開きます。
 
-`index.html` を直接開いた場合も写真と地球儀は表示できます。地球儀はローカルファイル用の `js/globe-data.js` を読み込みます。世界地図で国を選ぶ操作はローカルサーバー経由で確認してください。
+地球儀と世界地図はデータを `fetch` で読むので、`index.html` を直接開かずにローカルサーバー経由で確認してください。
 
 ## チェック
 
@@ -71,7 +72,6 @@ uv run scripts/build_world_map.py /tmp/countries-110m.json /tmp/countries-50m.js
 ```
 
 平らな地図 (`images/world-map.svg`) は粗い 110m、写真の横の地球儀 (`images/globe.json`) は小さな島まで載っている 50m から作ります。
-同じ地球儀データから、直接ファイルを開く場合の `js/globe-data.js` も生成します。
 
 国の数は `index.html` の `travel-count` に手で書いているので、あわせて更新してください。
 
@@ -81,7 +81,7 @@ uv run scripts/build_world_map.py /tmp/countries-110m.json /tmp/countries-50m.js
 
 写真は `images/travel/` に置き、`js/travel-photos.js` の `TRAVEL_PHOTOS` に1行足します。表示順は日本から西へ回る順（`geo` の経度順）で、同じ場所では登録順を保ちます。`geo` のない写真は最後に並びます。地図から開く場合も選んだ国から同じ順に進み、末尾から先頭へ続きます。写真にはキャプション・撮影日・枚数を表示し、国名と緯度経度は地球儀にまとめています。
 
-写真はクリック・スワイプ・左右キーに加え、画面下の矢印ボタンでも切り替えられます。写真番号とバーで、表示中の写真の位置を確認できます。
+写真はクリック・スワイプ・左右キーに加え、画面下の矢印ボタンでも切り替えられます。写真番号とバーで、表示中の写真の位置を確認できます。開いている写真に合わせて URL が `#photo=peru-2`（ファイル名から拡張子を除いたもの）に変わるので、そのまま共有できます。この URL を開くと、その写真からビューアが開きます。
 
 写真の横の地球儀は「1× / 2× / 4×」のボタンで倍率を切り替えられ、ホイールや2本指のピンチでも1〜4倍の間で拡大・縮小できます。拡大すると円が枠いっぱいに広がり、縁だけが背景に溶けるように薄くなります。ドラッグで回すこともできます。写真をめくっても倍率は維持し、次の撮影場所を中心に表示します。
 
@@ -105,7 +105,6 @@ uv run scripts/build_world_map.py /tmp/countries-110m.json /tmp/countries-50m.js
 - アイコン: [Font Awesome Free 5.5.0](https://fontawesome.com/license/free) (CC BY 4.0)
 - フォント: [Inter](https://github.com/rsms/inter), [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) (SIL Open Font License 1.1)
 - 地図データ: [world-atlas](https://github.com/topojson/world-atlas)（[Natural Earth](https://www.naturalearthdata.com/) を元にしたもの）
-- 標高画像: [NASA Earth Observatory / Jesse Allen, GEBCO (British Oceanographic Data Centre)](https://science.nasa.gov/earth/earth-observatory/blue-marble-next-generation/topography-bathymetry-maps/)
 
 ## Author
 

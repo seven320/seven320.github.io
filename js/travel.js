@@ -42,6 +42,11 @@
       });
     }
 
+    // 写真ごとの URL (#photo=peru-2)。開いている写真に合わせて書き換え、そのまま共有できるようにする。
+    function slugOf(photo) {
+      return photo.src.split('/').pop().replace(/\.[^.]+$/, '');
+    }
+
     function photoNumber(index) {
       return String(index).padStart(2, '0') + ' / ' + String(TRAVEL_PHOTOS.length).padStart(2, '0');
     }
@@ -92,6 +97,7 @@
       if (position) position.textContent = photoNumber(index);
       if (progress) progress.style.width = (index / cards.length * 100) + '%';
       if (photoGlobe) photoGlobe.show(deck[current].photo);
+      history.replaceState(null, '', '#photo=' + slugOf(deck[current].photo));
       announce();
     }
 
@@ -119,10 +125,11 @@
     prevButton.addEventListener('click', prev);
     nextButton.addEventListener('click', next);
 
-    function open(country, trigger) {
+    // photo を渡すとその写真から、なければ選んだ国の1枚目から始める。
+    function open(country, trigger, photo) {
       opener = trigger || document.activeElement;
-      // 選んだ国から始め、その後も同じ順(日本から西回り)にたどる。
-      var start = Math.max(0, cards.findIndex(function(c) { return c.photo.country === country; }));
+      // その後も同じ順(日本から西回り)にたどる。
+      var start = Math.max(0, cards.findIndex(function(c) { return photo ? c.photo === photo : c.photo.country === country; }));
       deck = cards.slice(start).concat(cards.slice(0, start));
       current = 0;
       drag = null;
@@ -209,6 +216,7 @@
       if (photoGlobe) photoGlobe.stop();
       cancelAnimationFrame(announceFrame);
       announcement.textContent = '';
+      if (location.hash.indexOf('#photo=') === 0) history.replaceState(null, '', location.pathname + location.search);
       if (opener && opener.isConnected && typeof opener.focus === 'function') opener.focus();
     });
     closeButton.addEventListener('click', close);
@@ -232,6 +240,17 @@
       }, { rootMargin: '200px' }).observe(peek);
       peek.addEventListener('click', function() { open(TRAVEL_PHOTOS[0].country, peek); });
     }
+
+    // #photo=... の URL で来たら、その写真を開く
+    function openFromHash() {
+      var match = /^#photo=([\w-]+)$/.exec(location.hash);
+      var photo = match && TRAVEL_PHOTOS.find(function(p) { return slugOf(p) === match[1]; });
+      if (!photo) return;
+      if (dialog.open) pickPhoto(photo);
+      else open(photo.country, null, photo);
+    }
+    window.addEventListener('hashchange', openFromHash);
+    openFromHash();
 
     return open;
   })();
