@@ -35,7 +35,7 @@
 ```
 
 - **水面エフェクト**: ヒーロー部分の背景は canvas に描いています。毎秒の時刻を SHA-256 でハッシュ化した値で水滴を落とし、波動方程式で波紋を広げています。画面外にあるときやタブが裏にあるとき、`prefers-reduced-motion` が有効なときは止まります。
-- **SNS・検索**: シェアしたときは横長のカード画像 (`images/og-image.jpg`) を表示します。アイコンや肩書きを変えたら `uv run scripts/build_og_image.py` で作り直します（macOS のヒラギノ角ゴシックを使います）。検索エンジン向けに、名前と各 SNS のリンクを JSON-LD (schema.org の Person) で書いています。
+- **SNS・検索**: シェアしたときは横長のカード画像 (`images/og-image.jpg`) を表示します。アイコンや肩書きを変えたら `uv run scripts/build_og_image.py` で作り直します（macOS のヒラギノ角ゴシックを使います）。検索エンジン向けに、名前と各 SNS のリンクを JSON-LD (schema.org の Person) で書き、正規の URL を `rel="canonical"` で示しています。
 - **表示速度**: フォントは自前で配信してプリロードし、Google Analytics (GA4) はページの読み込みが終わってから遅らせて読み込んでいます。
 
 ## 手元で確認する
