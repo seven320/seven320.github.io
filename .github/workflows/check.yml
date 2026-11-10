@@ -9,6 +9,10 @@ on:
     - cron: "0 0 * * 1"
   workflow_dispatch:
 
+# 読むだけのチェックなので、トークンの権限はリポジトリの読み取りだけにする
+permissions:
+  contents: read
+
 jobs:
   html:
     runs-on: ubuntu-latest
