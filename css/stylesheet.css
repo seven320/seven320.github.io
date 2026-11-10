@@ -1259,7 +1259,7 @@ a.badge:not(.badge-master) {
   color: var(--gold);
 }
 
-.medal-card h3 {
+.medal-card h4 {
   margin: 0 0 6px;
   font-size: 0.95em;
   line-height: 1.5;
