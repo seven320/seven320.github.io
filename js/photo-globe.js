@@ -11,10 +11,12 @@ function createPhotoGlobe(formatGeo, onPick) {
   var ctx = canvas && canvas.getContext && canvas.getContext('2d');
   if (!wrap || !ctx || !pulse || !window.fetch) return null;
 
+  // 外部の CDN から読むので、版を固定し、中身が変わっていたら実行しないよう integrity (SRI) で確かめる。
+  // 版を上げるときは integrity も作り直す: curl -sL <URL> | openssl dgst -sha384 -binary | openssl base64 -A
   var LIBS = [
-    'https://cdn.jsdelivr.net/npm/d3-array@3.2.4/dist/d3-array.min.js',
-    'https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/dist/d3-geo.min.js',
-    'https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js'
+    { src: 'https://cdn.jsdelivr.net/npm/d3-array@3.2.4/dist/d3-array.min.js', integrity: 'sha384-VpKMdU+TlpggHFip46tJ/xkFUs8NFBwLqUMo3+3uiu411lU6eUQYsHVU+JFpA5ja' },
+    { src: 'https://cdn.jsdelivr.net/npm/d3-geo@3.1.1/dist/d3-geo.min.js', integrity: 'sha384-VNiKRUXp0MmglFfqDwkfuk+Y78C3WTJShdKSaFwOacLR3UmamxHIJLBTD3BadIXD' },
+    { src: 'https://cdn.jsdelivr.net/npm/topojson-client@3.1.0/dist/topojson-client.min.js', integrity: 'sha384-Ukv1p/xTma6P4/2bY5KzWBw+ydSpXmhCMtyciIQVDJ1RmOxtCYNMF1uXT9T63H67' }
   ];
   var TURN_MS = 900;     // 次の場所まで回る時間
   var MAX_ZOOM = 4;
@@ -136,14 +138,17 @@ function createPhotoGlobe(formatGeo, onPick) {
   canvas.addEventListener('lostpointercapture', endPointer);
 
   // ---- 地図の読み込み ----
-  function loadScript(src) {
+  function loadScript(lib) {
     return new Promise(function(resolve, reject) {
       var script = document.createElement('script');
-      script.src = src;
+      script.src = lib.src;
+      // integrity の照合には CORS での取得が必要
+      script.integrity = lib.integrity;
+      script.crossOrigin = 'anonymous';
       script.onload = resolve;
       script.onerror = function() {
         script.remove();
-        reject(new Error('地図ライブラリの読み込みに失敗: ' + src));
+        reject(new Error('地図ライブラリの読み込みに失敗: ' + lib.src));
       };
       document.head.appendChild(script);
     });
@@ -157,8 +162,8 @@ function createPhotoGlobe(formatGeo, onPick) {
       function() { return window.topojson; }
     ];
     // d3-geo は d3-array を使うので順番に読む。読み込み済みのものは飛ばす。
-    ready = LIBS.reduce(function(chain, src, i) {
-      return chain.then(function() { if (!loaded[i]()) return loadScript(src); });
+    ready = LIBS.reduce(function(chain, lib, i) {
+      return chain.then(function() { if (!loaded[i]()) return loadScript(lib); });
     }, Promise.resolve()).then(function() {
       return fetch('images/globe.json').then(function(res) {
         return res.ok ? res.json() : Promise.reject(res.status);

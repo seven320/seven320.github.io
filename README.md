@@ -46,7 +46,7 @@ python3 -m http.server 8000
 
 ブラウザで http://localhost:8000/ を開きます。
 
-地球儀と世界地図はデータを `fetch` で読むので、`index.html` を直接開かずにローカルサーバー経由で確認してください。
+地球儀と世界地図はデータを `fetch` で読むので、`index.html` を直接開かずにローカルサーバー経由で確認してください。地球儀の描画に使う d3-geo・d3-array・topojson-client だけは、はじめて写真を開いたときに jsDelivr から読み込みます（ネットにつながっていないと地球儀は出ません）。版を固定し、`integrity` (SRI) で中身を確かめているので、版を上げるときは `js/photo-globe.js` の `LIBS` の `integrity` も作り直します。
 
 ## チェック
 
@@ -105,6 +105,7 @@ uv run scripts/build_world_map.py /tmp/countries-110m.json /tmp/countries-50m.js
 - アイコン: [Font Awesome Free 5.5.0](https://fontawesome.com/license/free) (CC BY 4.0)
 - フォント: [Inter](https://github.com/rsms/inter), [JetBrains Mono](https://github.com/JetBrains/JetBrainsMono) (SIL Open Font License 1.1)
 - 地図データ: [world-atlas](https://github.com/topojson/world-atlas)（[Natural Earth](https://www.naturalearthdata.com/) を元にしたもの）
+- 地球儀の描画: [d3-geo](https://github.com/d3/d3-geo), [d3-array](https://github.com/d3/d3-array), [topojson-client](https://github.com/topojson/topojson-client) (ISC License)
 
 ## Author
 
