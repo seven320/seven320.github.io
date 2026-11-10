@@ -425,11 +425,12 @@
   <script>
   // heroの背景に水面を作る
   // 時刻(秒)をSHA-256でハッシュ化した値で水滴を落とし、波動方程式で波紋を広げて、水面の傾きから光の当たり方を描く
+  // 波の計算は粗いマス目のまま CPU で行い、描くのは WebGL2 で画面の解像度に合わせてなめらかに補間する。
+  // WebGL2 が使えないときは、マス目の解像度で 2D の canvas に描いて引き伸ばす
   (function() {
     var hero = document.querySelector('.hero');
     var canvas = document.querySelector('.hero-fx');
     if (!hero || !canvas || !canvas.getContext) return;
-    var ctx = canvas.getContext('2d');
     var motion = window.siteMotion;
 
     var CELL = 6;          // 水面1マスの大きさ(px)
@@ -437,7 +438,9 @@
     var VISIBLE_RADIUS = 0.5;  // 水滴を落とす範囲(マスクの楕円の半径に対する割合)
     var MAX_HEIGHT = 500;  // 水面の高さの上限(連打で波が大きくなりすぎないように)
     var LIGHT = [-0.6, -0.8]; // 光の向き(左上から)
-    var cols, rows, cur, prev, image;
+    var SLOPE_SCALE = 120; // 傾きを明るさに直すときの割る数(大きいほど淡い)
+    var MAX_PIXEL_RATIO = 2;  // これより細かい画面でも、描く解像度はここまでにする
+    var cols, rows, cur, prev;
     var lastSecond = -1;
     var lastFrame = 0;
     var visible = true;
@@ -466,9 +469,7 @@
       rows = nextRows;
       cur = new Float32Array(cols * rows);
       prev = new Float32Array(cols * rows);
-      canvas.width = cols;
-      canvas.height = rows;
-      image = ctx.createImageData(cols, rows);
+      painter.resize();
     }
 
     // 双曲線正割
@@ -523,29 +524,179 @@
       prev = tmp;
     }
 
-    function render() {
-      var data = image.data;
-      for (var y = 1; y < rows - 1; y++) {
-        for (var x = 1; x < cols - 1; x++) {
-          var i = y * cols + x;
-          // 水面の傾き
-          var nx = cur[i - 1] - cur[i + 1];
-          var ny = cur[i - cols] - cur[i + cols];
-          // tanhで明るさを-1〜1になめらかに収める(強い波でも白飛びしない)
-          var shade = Math.tanh((nx * LIGHT[0] + ny * LIGHT[1]) / 120);
-          var o = i * 4;
-          if (shade > 0) {
-            // 光が当たる面: アクセント色のハイライト
-            data[o] = 120; data[o + 1] = 240; data[o + 2] = 220;
-            data[o + 3] = shade * 255;
-          } else {
-            // 光が当たらない面: 影
-            data[o] = 0; data[o + 1] = 0; data[o + 2] = 0;
-            data[o + 3] = -shade * 200;
-          }
-        }
+    // ---- 描き方(WebGL2) ----
+    // CPU で各マスの「光の当たり具合」を計算してテクスチャで渡し、シェーダーが画素ごとに補間して色にする
+    var VERTEX = [
+      '#version 300 es',
+      'out vec2 uv;',
+      'void main() {',
+      // 頂点データを持たずに、画面全体を覆う三角形を1枚描く
+      '  vec2 p = vec2(float((gl_VertexID << 1) & 2), float(gl_VertexID & 2));',
+      '  uv = vec2(p.x, 1.0 - p.y);',
+      '  gl_Position = vec4(p * 2.0 - 1.0, 0.0, 1.0);',
+      '}'
+    ].join('\n');
+    var FRAGMENT = [
+      '#version 300 es',
+      'precision highp float;',
+      'uniform sampler2D light;',
+      'uniform vec2 grid;',   // マスの数(横, 縦)
+      'in vec2 uv;',
+      'out vec4 color;',
+      // 3次のBスプラインで補間する。隣のマスとの境目に折れ目が出ない。
+      // テクスチャの線形補間を使って、16マスぶんを4回の読み出しで済ませる
+      'float smoothLight(vec2 p) {',
+      '  p -= 0.5;',
+      '  vec2 i = floor(p);',
+      '  vec2 f = p - i;',
+      '  vec2 f2 = f * f;',
+      '  vec2 f3 = f2 * f;',
+      '  vec2 w0 = (1.0 - 3.0 * f + 3.0 * f2 - f3) / 6.0;',
+      '  vec2 w1 = (4.0 - 6.0 * f2 + 3.0 * f3) / 6.0;',
+      '  vec2 w3 = f3 / 6.0;',
+      '  vec2 w2 = 1.0 - w0 - w1 - w3;',
+      '  vec2 g0 = w0 + w1;',
+      '  vec2 g1 = w2 + w3;',
+      '  vec2 h0 = (i - 0.5 + w1 / g0) / grid;',
+      '  vec2 h1 = (i + 1.5 + w3 / g1) / grid;',
+      '  return g0.y * (g0.x * texture(light, vec2(h0.x, h0.y)).r + g1.x * texture(light, vec2(h1.x, h0.y)).r)',
+      '       + g1.y * (g0.x * texture(light, vec2(h0.x, h1.y)).r + g1.x * texture(light, vec2(h1.x, h1.y)).r);',
+      '}',
+      'void main() {',
+      // tanhで明るさを-1〜1になめらかに収める(強い波でも白飛びしない)
+      '  float shade = tanh(smoothLight(uv * grid));',
+      // 光が当たる面はアクセント色のハイライト、当たらない面は影。色は透明度を掛けた値で出す
+      '  float lit = max(shade, 0.0);',
+      '  float alpha = lit + max(-shade, 0.0) * (200.0 / 255.0);',
+      '  color = vec4(vec3(120.0, 240.0, 220.0) / 255.0 * lit, alpha);',
+      // 淡いグラデーションに縞が出ないよう、画素ごとに1階調ぶんのばらつきを足す
+      '  float noise = fract(sin(dot(gl_FragCoord.xy, vec2(12.9898, 78.233))) * 43758.5453) - 0.5;',
+      '  color = max(color + noise / 255.0 * step(0.004, alpha), 0.0);',
+      '}'
+    ].join('\n');
+
+    function createGLPainter() {
+      var gl = canvas.getContext('webgl2', { antialias: false, depth: false, stencil: false, powerPreference: 'low-power' });
+      if (!gl) return null;
+      var light = null;   // 各マスの光の当たり具合
+      var gridUniform = null;
+      var ok = false;
+
+      function compile(type, source) {
+        var shader = gl.createShader(type);
+        gl.shaderSource(shader, source);
+        gl.compileShader(shader);
+        return shader;
       }
-      ctx.putImageData(image, 0, 0);
+
+      // 描く準備。GPU の状態が失われたあと(webglcontextrestored)にもやり直す
+      function setup() {
+        var program = gl.createProgram();
+        gl.attachShader(program, compile(gl.VERTEX_SHADER, VERTEX));
+        gl.attachShader(program, compile(gl.FRAGMENT_SHADER, FRAGMENT));
+        gl.linkProgram(program);
+        ok = !!gl.getProgramParameter(program, gl.LINK_STATUS);
+        if (!ok) return false;
+        gl.useProgram(program);
+        gridUniform = gl.getUniformLocation(program, 'grid');
+        gl.bindTexture(gl.TEXTURE_2D, gl.createTexture());
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+        if (cols) allocate();
+        return true;
+      }
+
+      function allocate() {
+        light = new Float32Array(cols * rows);
+        // 16ビットの小数のテクスチャは、拡張機能なしで線形補間できる
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, cols, rows, 0, gl.RED, gl.FLOAT, light);
+        gl.uniform2f(gridUniform, cols, rows);
+        gl.viewport(0, 0, canvas.width, canvas.height);
+      }
+
+      if (!setup()) return null;
+      canvas.addEventListener('webglcontextlost', function(e) {
+        e.preventDefault();
+        ok = false;
+      });
+      canvas.addEventListener('webglcontextrestored', setup);
+
+      return {
+        resize: function() {
+          var ratio = Math.min(window.devicePixelRatio || 1, MAX_PIXEL_RATIO);
+          canvas.width = Math.round(hero.clientWidth * ratio);
+          canvas.height = Math.round(hero.clientHeight * ratio);
+          if (ok) allocate();
+        },
+        paint: function() {
+          if (!ok) return;
+          for (var y = 1; y < rows - 1; y++) {
+            for (var x = 1; x < cols - 1; x++) {
+              var i = y * cols + x;
+              // 水面の傾きと光の向きから、光の当たり具合を出す
+              light[i] = ((cur[i - 1] - cur[i + 1]) * LIGHT[0] + (cur[i - cols] - cur[i + cols]) * LIGHT[1]) / SLOPE_SCALE;
+            }
+          }
+          gl.texSubImage2D(gl.TEXTURE_2D, 0, 0, 0, cols, rows, gl.RED, gl.FLOAT, light);
+          gl.drawArrays(gl.TRIANGLES, 0, 3);
+        },
+        clear: function() {
+          if (!ok) return;
+          gl.clearColor(0, 0, 0, 0);
+          gl.clear(gl.COLOR_BUFFER_BIT);
+        }
+      };
+    }
+
+    // ---- 描き方(2D の canvas。WebGL2 が使えないとき) ----
+    function create2DPainter() {
+      var ctx = canvas.getContext('2d');
+      var image = null;
+      return {
+        resize: function() {
+          canvas.width = cols;
+          canvas.height = rows;
+          image = ctx.createImageData(cols, rows);
+        },
+        paint: function() {
+          var data = image.data;
+          for (var y = 1; y < rows - 1; y++) {
+            for (var x = 1; x < cols - 1; x++) {
+              var i = y * cols + x;
+              // 水面の傾き
+              var nx = cur[i - 1] - cur[i + 1];
+              var ny = cur[i - cols] - cur[i + cols];
+              // tanhで明るさを-1〜1になめらかに収める(強い波でも白飛びしない)
+              var shade = Math.tanh((nx * LIGHT[0] + ny * LIGHT[1]) / SLOPE_SCALE);
+              var o = i * 4;
+              if (shade > 0) {
+                // 光が当たる面: アクセント色のハイライト
+                data[o] = 120; data[o + 1] = 240; data[o + 2] = 220;
+                data[o + 3] = shade * 255;
+              } else {
+                // 光が当たらない面: 影
+                data[o] = 0; data[o + 1] = 0; data[o + 2] = 0;
+                data[o + 3] = -shade * 200;
+              }
+            }
+          }
+          ctx.putImageData(image, 0, 0);
+        },
+        clear: function() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+      };
+    }
+
+    var painter = createGLPainter();
+    if (!painter) {
+      // WebGL2 の準備に途中で失敗した canvas は 2D で使えないので、新しいものに取り替える
+      var replacement = canvas.cloneNode(false);
+      canvas.replaceWith(replacement);
+      canvas = replacement;
+      painter = create2DPainter();
     }
 
     function loop(now) {
@@ -560,7 +711,7 @@
       lastFrame = now - ((now - lastFrame) % interval);
       rainFromClock();
       step();
-      render();
+      painter.paint();
     }
 
     function shouldRun() {
@@ -573,7 +724,7 @@
         running = true;
         requestAnimationFrame(loop);
       }
-      if (motion.reduced) ctx.clearRect(0, 0, canvas.width, canvas.height);
+      if (motion.reduced) painter.clear();
     }
 
     // 画面上の位置を水面のマスに変換する(canvasは引き伸ばして表示している)
