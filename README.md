@@ -31,7 +31,7 @@
 ├── images/                    # アイコン・作品画像・世界地図
 ├── scripts/build_world_map.py # 世界地図 (images/world-map.svg) と写真の地球儀の国の形 (images/globe.json) の生成スクリプト
 ├── scripts/build_og_image.py  # SNS でシェアしたときのカード画像 (images/og-image.jpg) の生成スクリプト
-└── .github/workflows/check.yml # HTML の検証とリンク切れチェック
+└── .github/workflows/check.yml # HTML の検証、JS の構文チェック、リンク切れチェック
 ```
 
 - **水面エフェクト**: ヒーロー部分の背景は canvas に描いています。毎秒の時刻を SHA-256 でハッシュ化した値で水滴を落とし、波動方程式で波紋を広げています。画面外にあるときやタブが裏にあるとき、`prefers-reduced-motion` が有効なときは止まります。
@@ -53,12 +53,14 @@ python3 -m http.server 8000
 push・プルリクエストのたびと毎週月曜に、GitHub Actions で次を確認しています。
 
 - [html-validate](https://html-validate.org/) で HTML を検証（設定は `.htmlvalidate.json`）
+- `node --check` で `js/` の JavaScript の構文を確認（`index.html` に直接書いた JS は対象外）
 - [lychee](https://github.com/lycheeverse/lychee) でリンク切れを確認（X・Instagram はボットを弾くので対象外）
 
-手元で HTML を検証するときは次を実行します。
+手元で HTML と JavaScript を検証するときは次を実行します。`node --check` は最初の1ファイルしか見ないので、1つずつ渡します。
 
 ```sh
 npx html-validate@9 index.html 404.html
+for file in js/*.js; do node --check "$file"; done
 ```
 
 ## 世界地図を更新する
