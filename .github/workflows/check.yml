@@ -9,6 +9,10 @@ on:
     - cron: "0 0 * * 1"
   workflow_dispatch:
 
+# 読むだけのチェックなので、トークンの権限はリポジトリの読み取りだけにする
+permissions:
+  contents: read
+
 jobs:
   html:
     runs-on: ubuntu-latest
@@ -18,6 +22,19 @@ jobs:
         with:
           node-version: 22
       - run: npx -y html-validate@9 index.html 404.html
+
+  js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # node --check は最初の1ファイルしか見ないので、1つずつ確かめる
+      - run: |
+          for file in js/*.js; do
+            node --check "$file"
+          done
 
   links:
     runs-on: ubuntu-latest
