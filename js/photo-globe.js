@@ -1,4 +1,5 @@
 // 写真の束の横の地球儀。いちばん上の写真を撮った場所まで回してピンを刺す。
+// 写真をめくると、前の撮影場所から今の撮影場所へ細い線を引く。
 // 地図のライブラリと国の形は、はじめて写真を開いたときに読み込む。
 // onPick(photo): ほかの撮影場所の点が押されたら、その場所の1枚目の写真を渡す。
 function createPhotoGlobe(formatGeo, onPick) {
@@ -28,6 +29,7 @@ function createPhotoGlobe(formatGeo, onPick) {
     border: 'rgba(9, 25, 34, 0.42)',
     graticule: 'rgba(164, 203, 214, 0.14)',
     pin: '#ffb454',
+    arc: 'rgba(255, 180, 84, 0.7)',
     dot: 'rgba(255, 180, 84, 0.75)',
     dotEdge: '#0b0f17'
   };
@@ -42,6 +44,8 @@ function createPhotoGlobe(formatGeo, onPick) {
   var frame = 0;
   var rotation = [-140, -20];
   var turn = null;       // 回転アニメーション { from, to, start }
+  var turnProgress = 1;  // 回転の進み具合(0〜1)。回っていないときは 1
+  var arc = null;        // 前の撮影場所から今の撮影場所への線 { from, to }(経度・緯度)
   var zoom = 1;
   var pinLonLat = null;
   var currentCountry = null;
@@ -209,12 +213,17 @@ function createPhotoGlobe(formatGeo, onPick) {
   }
 
   function updateRotation(now) {
-    if (!turn) return;
+    if (!turn) {
+      // ドラッグで回転を止めたときも、線は最後まで引いた状態にする。
+      turnProgress = 1;
+      return;
+    }
     // 回し始めの時刻は、最初に描くコマの時刻にそろえる。
     if (turn.start === null) turn.start = now;
     var t = window.siteMotion.reduced ? 1 : Math.min(1, (now - turn.start) / TURN_MS);
     var k = ease(t);
     rotation = [0, 1].map(function(i) { return turn.from[i] + (turn.to[i] - turn.from[i]) * k; });
+    turnProgress = k;
     if (t === 1) turn = null;
   }
 
@@ -296,6 +305,13 @@ function createPhotoGlobe(formatGeo, onPick) {
       ctx.fill();
     });
 
+    // 前の撮影場所からの線。地球儀が回るのに合わせて伸び、次にめくるまで残る。
+    // 2点を結ぶ線は d3 が大圏コース(球面上の最短の道)に沿って曲げ、裏側に回った部分は描かない。
+    if (arc && turnProgress > 0) {
+      var arcEnd = turnProgress < 1 ? d3.geoInterpolate(arc.from, arc.to)(turnProgress) : arc.to;
+      stroke(path, { type: 'LineString', coordinates: [arc.from, arcEnd] }, COLOR.arc, 1);
+    }
+
     // ほかの写真の撮影場所は小さな点。今の写真の場所はピンで別に描く。
     dots = [];
     photoPlaces().forEach(function(place) {
@@ -363,6 +379,8 @@ function createPhotoGlobe(formatGeo, onPick) {
       var lonLat = lonLatOf(photo);
       if (!lonLat) return;
       wrap.hidden = false;
+      // 開いた直後と、同じ場所の写真へめくったときは線を引かない。
+      arc = !fresh && pinLonLat && String(pinLonLat) !== String(lonLat) ? { from: pinLonLat, to: lonLat } : null;
       pinLonLat = lonLat;
       currentCountry = photo.country;
       countryLabel.textContent = photo.country === 'United States of America' ? 'United States' : photo.country;
@@ -388,6 +406,8 @@ function createPhotoGlobe(formatGeo, onPick) {
     cancelAnimationFrame(frame);
     frame = 0;
     turn = null;
+    arc = null;
+    pinLonLat = null;
     pointers.clear();
     resetGesture();
     pulse.hidden = true;
